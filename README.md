@@ -13,5 +13,4 @@ Multidimensional screening without Numba
 
 
 ## TO DO
-- fix the plots
 - optimize the code.
