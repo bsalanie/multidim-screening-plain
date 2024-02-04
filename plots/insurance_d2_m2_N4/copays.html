@@ -1,0 +1,17 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.16.3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body>
+<div class="vega-visualization" id="vega-visualization-5299c7b5eb494fde8488052e27f2338d"></div>
+<script type="text/javascript">
+  const spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}}, "layer": [{"mark": {"type": "point", "filled": true, "size": 150}, "encoding": {"color": {"field": "Risk-aversion", "type": "nominal"}, "tooltip": [{"field": "Risk-aversion", "type": "quantitative"}, {"field": "Risk location", "type": "quantitative"}, {"field": "Copay", "type": "quantitative"}], "x": {"field": "Risk location", "scale": {"domain": [-3.0, -3.0]}, "title": "Risk location", "type": "quantitative"}, "y": {"field": "Copay", "scale": {"domain": [0.014100577788694984, 0.014100577788694984]}, "title": "Copay", "type": "quantitative"}}, "name": "view_6"}, {"mark": {"type": "line", "strokeWidth": 1}, "encoding": {"color": {"field": "Risk-aversion", "type": "nominal"}, "tooltip": [{"field": "Risk-aversion", "type": "quantitative"}, {"field": "Risk location", "type": "quantitative"}, {"field": "Copay", "type": "quantitative"}], "x": {"field": "Risk location", "scale": {"domain": [-3.0, -3.0]}, "title": "Risk location", "type": "quantitative"}, "y": {"field": "Copay", "scale": {"domain": [0.014100577788694984, 0.014100577788694984]}, "title": "Copay", "type": "quantitative"}}}], "data": {"name": "data-e115a62fe88ac6b696d6b4e56197404e"}, "params": [{"name": "param_6", "select": {"type": "interval", "encodings": ["x", "y"]}, "bind": "scales", "views": ["view_6"]}], "$schema": "https://vega.github.io/schema/vega-lite/v5.16.3.json", "datasets": {"data-e115a62fe88ac6b696d6b4e56197404e": [{"Model": "Second-best", "Risk-aversion": 0.5, "Risk location": -3.0, "Deductible": 0.5789749862232958, "Copay": 0.014100577788694984}]}};
+  const embedOpt = {};
+  vegaEmbed('#vega-visualization-5299c7b5eb494fde8488052e27f2338d', spec, embedOpt).catch(console.error);
+</script>
+</body>
+</html>

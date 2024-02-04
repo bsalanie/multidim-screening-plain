@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import cast
 
 import altair as alt
@@ -11,19 +10,20 @@ from multidim_screening_plain.utils import drawArrow, set_axis, set_colors
 
 
 def plot_calibration(
-    df_first_best: pd.DataFrame,
+    df_all_results: pd.DataFrame,
     title: str | None = None,
-    path: Path | None = None,
+    path: str | None = None,
     **kwargs: dict | None,
 ) -> alt.Chart:
     dfm = pd.melt(
-        df_first_best,
+        df_all_results,
         id_vars=["Risk-aversion", "Risk location"],
         value_vars=[
-            "Claim probability",
+            "Actuarial premium at first-best",
+            "Cost of non-insurance",
             "Expected positive loss",
-            "First-best surplus",
-            "First-best actuarial premium",
+            "Probability of claim",
+            "Value of first-best coverage",
         ],
     )
     for var in ["Risk-aversion", "Risk location", "value"]:
@@ -56,18 +56,14 @@ def plot_calibration(
 
 
 def plot_utilities(
-    theta_mat: np.ndarray,
-    S_first: np.ndarray,
-    S_second: np.ndarray,
-    U_second: np.ndarray,
-    path: Path | None = None,
+    df_all_results: pd.DataFrame,
+    title: str | None = None,
+    path: str | None = None,
+    **kwargs: dict | None,
 ) -> alt.Chart:
-    df2 = pd.DataFrame(theta_mat.round(3), columns=["Risk-aversion", "Risk location"])
-    df2["First-best surplus"] = S_first
-    df2["Second-best surplus"] = S_second
-    df2["Lost surplus"] = S_first - S_second
-    df2["Informational rent"] = U_second
-    df2["Profit"] = S_second - U_second
+    df2 = df_all_results.copy()
+    df2["Profit"] = df2["Second-best surplus"] - df2["Informational rent"]
+    df2["Lost surplus"] = df2["First-best surplus"] - df2["Second-best surplus"]
     df2m = pd.melt(
         df2,
         id_vars=["Risk-aversion", "Risk location"],
@@ -99,7 +95,7 @@ def plot_utilities(
 def plot_best_contracts(
     df_first_and_second: pd.DataFrame,
     title: str | None = None,
-    path: Path | None = None,
+    path: str | None = None,
     **kwargs: dict | None,
 ) -> alt.Chart:
     """plots the optimal contracts for both first and second best  in the type space
@@ -115,7 +111,7 @@ def plot_best_contracts(
     Returns:
           the two interactive scatterplots.
     """
-    deduc = df_first_and_second.Deductible
+    deduc = df_first_and_second["Deductible"].values
     our_colors = set_colors(
         np.quantile(deduc, np.arange(10) / 10.0).tolist(), interpolate=True
     )
@@ -151,12 +147,11 @@ def plot_best_contracts(
 
 
 def plot_second_best_contracts(
-    theta_mat: np.ndarray,
-    y_mat: np.ndarray,
+    df_second: pd.DataFrame,
     title: str | None = None,
     cmap=None,
     cmap_label: str | None = None,
-    path: Path | None = None,
+    path: str | None = None,
     figsize: tuple[int, int] = (5, 5),
     **kwargs: dict | None,
 ) -> None:
@@ -165,6 +160,8 @@ def plot_second_best_contracts(
     _ = ax.set_xlabel(r"Risk-aversion $\sigma$")
     _ = ax.set_ylabel(r"Risk location $\delta$")
     _ = ax.set_title(title)
+    theta_mat = df_second[["Risk-aversion", "Risk location"]].values
+    y_mat = df_second[["Deductible", "Copay"]].values
     scatter = ax.scatter(
         theta_mat[:, 0], theta_mat[:, 1], s=200 * (1.0 - y_mat[:, 1]), c=y_mat[:, 0]
     )
@@ -174,23 +171,27 @@ def plot_second_best_contracts(
 
 
 def display_variable(
-    variable: np.ndarray,
-    theta_mat: np.ndarray,
+    df_all_results: pd.DataFrame,
+    variable: str,
     title: str | None = None,
     cmap=None,
-    cmap_label: str | None = None,
-    path: Path | None = None,
+    path: str | None = None,
     figsize: tuple[int, int] = (5, 5),
     **kwargs: dict | None,
 ) -> None:
+    theta_mat = df_all_results[["Risk-aversion", "Risk location"]].values
     fig, ax = plt.subplots(
         1, 1, figsize=figsize, subplot_kw=kwargs
     )  # subplot_kw=dict(aspect='equal',)
     _ = ax.set_xlabel(r"Risk-aversion $\sigma$")
     _ = ax.set_ylabel(r"Risk location $\delta$")
     _ = ax.set_title(title)
-    scatter = ax.scatter(theta_mat[:, 0], theta_mat[:, 1], c=variable, cmap=cmap)
-    _ = fig.colorbar(scatter, label=cmap_label)
+    scatter = ax.scatter(
+        theta_mat[:, 0], theta_mat[:, 1], c=df_all_results[variable].values, cmap=cmap
+    )
+    _ = fig.colorbar(scatter, label=variable)
+    if title is not None:
+        _ = ax.set_title(title)
 
     if path is not None:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
@@ -201,7 +202,7 @@ def plot_y_range(
     figsize: tuple[int, int] = (5, 5),
     s: int = 20,
     title: str | None = None,
-    path: Path | None = None,
+    path: str | None = None,
     **kwargs,
 ) -> None:
     """the supposed stingray: the optimal contracts for both first and second best in contract space
@@ -239,7 +240,7 @@ def plot_y_range(
 
 
 def plot_contract_models(
-    df_first_and_second: pd.DataFrame, varname: str, path: Path | None = None, **kwargs
+    df_first_and_second: pd.DataFrame, varname: str, path: str | None = None, **kwargs
 ) -> alt.Chart:
     """plots a contract variable for both first and second best
     as a function of risk, with different colors by risk-aversion.
@@ -272,7 +273,7 @@ def plot_contract_models(
 
 
 def plot_contract_riskavs(
-    df_first_and_second: pd.DataFrame, varname: str, path: Path | None = None, **kwargs
+    df_first_and_second: pd.DataFrame, varname: str, path: str | None = None, **kwargs
 ) -> alt.Chart:
     """plots the optimal value of a contract variable for both first and second best
     as a function of risk, with different colors by risk-aversion.
@@ -309,7 +310,7 @@ def plot_contract_riskavs(
 
 
 def plot_copays(
-    df_second: pd.DataFrame, path: Path | None = None, **kwargs
+    df_second: pd.DataFrame, path: str | None = None, **kwargs
 ) -> alt.Chart:
     """plots the optimal copay for the second best.
 
@@ -326,7 +327,7 @@ def plot_copays(
     df = df_second[Copay < 0.99]
     rng = np.random.default_rng()
     # jiggle the points a bit
-    df["Copay"] += rng.normal(0, 0.01, df.shape[0])
+    df.loc[:, "Copay"] += rng.normal(0.0, 0.01, df.shape[0])
     base = alt.Chart(df).encode(
         x=alt.X(
             "Risk location:Q",
@@ -346,25 +347,26 @@ def plot_copays(
 
 
 def plot_constraints(
-    theta_mat: np.ndarray,
+    df_all_results: pd.DataFrame,
     IR_binds: list,
     IC_binds: list,
     figsize: tuple = (5, 5),
     s: float = 20,
     title: str | None = None,
-    path: Path | None = None,
+    path: str | None = None,
     **kwargs,
 ) -> None:
     """the original scatterplot  of binding constraints.
 
     Args:
-        theta_mat: the `(N,2)` matrix of type values
+        df_all_results: the dataframe of results
         IR_binds: the list of types for which  IR binds
         IC_binds: the list of pairs (i, j) for which i is indifferent between his contract and j's
 
     Returns:
         nothing. Just plots the constraints.
     """
+    theta_mat = df_all_results[["Risk-aversion", "Risk location"]].values.round(2)
     IC = "IC" if title else "IC binding"
     IR = "IR" if title else "IR binding"
     fig, ax = plt.subplots(

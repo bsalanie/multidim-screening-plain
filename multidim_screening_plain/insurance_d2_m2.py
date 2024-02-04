@@ -2,9 +2,22 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
+import pandas as pd
 from bs_python_utils.bsutils import bs_error_abort, mkdir_if_needed
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
+from multidim_screening_plain.insurance_d2_m2_plots import (
+    display_variable,
+    plot_best_contracts,
+    plot_calibration,
+    plot_constraints,
+    plot_contract_models,
+    plot_contract_riskavs,
+    plot_copays,
+    plot_second_best_contracts,
+    plot_utilities,
+    plot_y_range,
+)
 from multidim_screening_plain.insurance_d2_m2_values import (
     S_penalties,
     cost_non_insur,
@@ -243,109 +256,6 @@ def create_initial_contracts(
     return y_init, free_y
 
 
-def plot_results(results: ScreeningResults) -> None:
-    pass
-    # model = results.model
-    # model_resdir = cast(Path, model.resdir)
-    # model_plotdir = cast(Path, model.plotdir)
-    # df_all_results = pd.read_csv(model_resdir / "all_results.csv").rename(
-    #     columns={
-    #         "FB_y_0": "First-best deductible",
-    #         "y_0": "Second-best deductible",
-    #         "y_1": "Second-best copay",
-    #         "theta_0": "Risk-aversion",
-    #         "theta_1": "Risk location",
-    #         "FB_surplus": "First-best surplus",
-    #         "SB_surplus": "Second-best surplus",
-    #         "info_rents": "Informational rents",
-    #     }
-    # )
-
-    # # first plot the first best
-    # y_first_best = df_all_results["First-best deductible"].values.round(3)
-    # theta_mat = df_all_results[["Risk-aversion", "Risk location"]].values.round(2)
-
-    # # plot_calibration(df_first_best, path=model_plotdir / "calibration")
-
-    # y_second_best = results.SB_y.round(3)
-
-    # ## put FB and SB together
-    # df_first = df_first_best[["Risk-aversion", "Risk location", "Deductible", "Copay"]]
-    # df_first["Model"] = "First-best"
-    # df_second = pd.DataFrame(
-    #     {
-    #         "Deductible": y_second_best[:, 0],
-    #         "Copay": y_second_best[:, 1],
-    #     }
-    # )
-    # df_second["Model"] = "Second-best"
-    # df_first_and_second = pd.concat((df_first, df_second), axis=1)
-
-    # display_variable(
-    #     y_first_best[:, 0],
-    #     theta_mat,
-    #     cmap="viridis",
-    #     cmap_label=r"First-best deductible $y_0$",
-    #     path=model_plotdir / "first_best_deduc",
-    # )
-
-    # plot_contract_models(
-    #     df_first_and_second, "Deductible", path=model_plotdir / "deducs_models"
-    # )
-
-    # plot_contract_models(
-    #     df_first_and_second, "Copay", path=model_plotdir / "copays_models"
-    # )
-
-    # plot_contract_riskavs(
-    #     df_first_and_second,
-    #     "Deductible",
-    #     path=model_plotdir / "deducs_riskavs",
-    # )
-
-    # plot_contract_riskavs(
-    #     df_first_and_second, "Copay", path=model_plotdir / "copays_riskavs"
-    # )
-
-    # plot_copays(df_second, path=model_plotdir / "copays")
-
-    # plot_best_contracts(
-    #     df_first_and_second,
-    #     path=model_plotdir / "optimal_contracts",
-    # )
-
-    # plot_y_range(df_first_and_second, path=model_plotdir / "y_range")
-
-    # plot_second_best_contracts(
-    #     theta_mat,
-    #     y_second_best,
-    #     title="Second-best contracts",
-    #     cmap="viridis",
-    #     path=model_plotdir / "second_best_contracts",
-    # )
-
-    # IR_binds = (
-    #     np.loadtxt(model_resdir / "second_best_IR_binds.txt").astype(int).tolist()
-    # )
-
-    # IC_binds = (
-    #     np.loadtxt(model_resdir / "second_best_IC_binds.txt").astype(int).tolist()
-    # )
-
-    # plot_constraints(theta_mat, IR_binds, IC_binds, path=model_plotdir / "constraints")
-
-    # U_second, S_second = results.info_rents, results.SB_surplus
-    # S_first = df_first_best["Surplus"].values
-
-    # plot_utilities(
-    #     theta_mat,
-    #     S_first,
-    #     S_second,
-    #     U_second,
-    #     path=model_plotdir / "utilities",
-    # )
-
-
 def additional_results(
     results: ScreeningResults,
 ) -> None:
@@ -356,7 +266,7 @@ def additional_results(
     """
     model = results.model
     sigmas, deltas = model.theta_mat[:, 0], model.theta_mat[:, 1]
-    s, loading = model.params
+    s = model.params[0]
     results.additional_results_names = [
         "Second-best actuarial premium",
         "Cost of non-insurance",
@@ -387,3 +297,121 @@ def additional_results(
         "Value of first-best coverage",
         "Value of second-best coverage",
     ]
+
+
+def plot_results(model: ScreeningModel) -> None:
+    model_resdir = cast(Path, model.resdir)
+    model_plotdir = str(cast(Path, model.plotdir))
+    df_all_results = pd.read_csv(model_resdir / "all_results.csv").rename(
+        columns={
+            "FB_y_0": "First-best deductible",
+            "y_0": "Second-best deductible",
+            "y_1": "Second-best copay",
+            "theta_0": "Risk-aversion",
+            "theta_1": "Risk location",
+            "FB_surplus": "First-best surplus",
+            "SB_surplus": "Second-best surplus",
+            "info_rents": "Informational rent",
+        }
+    )
+
+    # first plot the first best
+    plot_calibration(df_all_results, path=model_plotdir + "/calibration")
+
+    # y_second_best = results.SB_y.round(3)
+
+    # ## put FB and SB together
+    # df_first = df_first_best[["Risk-aversion", "Risk location", "Deductible", "Copay"]]
+    # df_first["Model"] = "First-best"
+    # df_second = pd.DataFrame(
+    #     {
+    #         "Deductible": y_second_best[:, 0],
+    #         "Copay": y_second_best[:, 1],
+    #     }
+    # )
+    # df_second["Model"] = "Second-best"
+    # df_first_and_second = pd.concat((df_first, df_second), axis=1)
+
+    display_variable(
+        df_all_results,
+        variable="First-best deductible",
+        cmap="viridis",
+        path=model_plotdir + "/first_best_deduc",
+    )
+
+    df_contracts = df_all_results[
+        [
+            "Risk-aversion",
+            "Risk location",
+            "First-best deductible",
+            "Second-best deductible",
+            "Second-best copay",
+        ]
+    ]
+
+    df_first_and_second = pd.DataFrame(
+        {
+            "Model": np.concatenate(
+                (np.full(model.N, "First-best"), np.full(model.N, "Second-best"))
+            ),
+            "Risk-aversion": np.tile(df_contracts["Risk-aversion"].values, 2),
+            "Risk location": np.tile(df_contracts["Risk location"].values, 2),
+            "Deductible": np.concatenate(
+                (
+                    df_contracts["First-best deductible"],
+                    df_contracts["Second-best deductible"],
+                )
+            ),
+            "Copay": np.concatenate(
+                (np.zeros(model.N), df_contracts["Second-best copay"].values)
+            ),
+        }
+    )
+
+    plot_contract_models(
+        df_first_and_second, "Deductible", path=model_plotdir + "/deducs_models"
+    )
+
+    plot_contract_models(
+        df_first_and_second, "Copay", path=model_plotdir + "/copays_models"
+    )
+
+    plot_contract_riskavs(
+        df_first_and_second,
+        "Deductible",
+        path=model_plotdir + "/deducs_riskavs",
+    )
+
+    plot_contract_riskavs(
+        df_first_and_second, "Copay", path=model_plotdir + "/copays_riskavs"
+    )
+
+    df_second = df_first_and_second.query('Model == "Second-best"')
+    plot_copays(df_second, path=model_plotdir + "/copays")
+
+    plot_best_contracts(
+        df_first_and_second,
+        path=model_plotdir + "/optimal_contracts",
+    )
+
+    plot_y_range(df_first_and_second, path=model_plotdir + "/y_range")
+
+    plot_second_best_contracts(
+        df_second,
+        title="Second-best contracts",
+        cmap="viridis",
+        path=model_plotdir + "/second_best_contracts",
+    )
+
+    IR_binds = np.loadtxt(model_resdir / "IR_binds.txt").astype(int).tolist()
+
+    IC_binds = np.loadtxt(model_resdir / "IC_binds.txt").astype(int).tolist()
+
+    plot_constraints(
+        df_all_results, IR_binds, IC_binds, path=model_plotdir + "/constraints"
+    )
+
+    plot_utilities(
+        df_all_results,
+        path=model_plotdir + "/utilities",
+    )

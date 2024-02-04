@@ -115,10 +115,10 @@ def add_results(
     return cast(None, model_module.additional_results(results))
 
 
-def plot(results: ScreeningResults) -> None:
+def plot(model: ScreeningModel) -> None:
     """Plots the results
 
     Args:
         results: the results
     """
-    model_module.plot_results(results)
+    model_module.plot_results(model)

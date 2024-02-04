@@ -1,0 +1,17 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.16.3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body>
+<div class="vega-visualization" id="vega-visualization-77c07156ce0c4f8e8b47fdf29e434b61"></div>
+<script type="text/javascript">
+  const spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}}, "data": {"name": "data-284e74d7c738cd01ca99ded07be50d48"}, "facet": {"column": {"field": "Model", "type": "nominal"}}, "spec": {"layer": [{"mark": {"type": "point", "filled": true, "size": 50}, "encoding": {"color": {"field": "Risk-aversion", "type": "nominal"}, "tooltip": [{"field": "Risk-aversion", "type": "quantitative"}, {"field": "Risk location", "type": "quantitative"}, {"field": "Copay", "type": "quantitative"}], "x": {"field": "Risk location", "scale": {"domain": [-7.2, -2.8]}, "title": "Risk location", "type": "quantitative"}, "y": {"field": "Copay", "type": "quantitative"}}, "name": "view_3"}, {"mark": {"type": "line", "strokeWidth": 0.5}, "encoding": {"color": {"field": "Risk-aversion", "type": "nominal"}, "tooltip": [{"field": "Risk-aversion", "type": "quantitative"}, {"field": "Risk location", "type": "quantitative"}, {"field": "Copay", "type": "quantitative"}], "x": {"field": "Risk location", "scale": {"domain": [-7.2, -2.8]}, "title": "Risk location", "type": "quantitative"}, "y": {"field": "Copay", "type": "quantitative"}}}]}, "params": [{"name": "param_3", "select": {"type": "interval", "encodings": ["x", "y"]}, "bind": "scales", "views": ["view_3"]}], "$schema": "https://vega.github.io/schema/vega-lite/v5.16.3.json", "datasets": {"data-284e74d7c738cd01ca99ded07be50d48": [{"Model": "First-best", "Risk-aversion": 0.2, "Risk location": -7.0, "Deductible": 1.142603542902794, "Copay": 0.0}, {"Model": "First-best", "Risk-aversion": 0.5, "Risk location": -7.0, "Deductible": 0.4645502810529676, "Copay": 0.0}, {"Model": "First-best", "Risk-aversion": 0.2, "Risk location": -3.0, "Deductible": 1.3895036864706876, "Copay": 0.0}, {"Model": "First-best", "Risk-aversion": 0.5, "Risk location": -3.0, "Deductible": 0.5789749862232958, "Copay": 0.0}, {"Model": "Second-best", "Risk-aversion": 0.5, "Risk location": -3.0, "Deductible": 0.5789749862232958, "Copay": 6.437820874208766e-05}]}};
+  const embedOpt = {};
+  vegaEmbed('#vega-visualization-77c07156ce0c4f8e8b47fdf29e434b61', spec, embedOpt).catch(console.error);
+</script>
+</body>
+</html>

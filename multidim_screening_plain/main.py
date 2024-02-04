@@ -19,6 +19,7 @@ from multidim_screening_plain.specif import (
     add_results,
     initialize_contracts,
     model_name,
+    plot,
     setup_model,
 )
 
@@ -27,8 +28,9 @@ if __name__ == "__main__":
 
     model = setup_model(model_name)
 
-    do_first_best = True
-    do_solve = True
+    do_first_best = False
+    do_solve = False
+    do_plots = True
 
     start_from_first_best = True
     start_from_current = not start_from_first_best
@@ -70,4 +72,5 @@ if __name__ == "__main__":
 
         print(results)
 
-        # plot(results)
+    if do_plots:
+        plot(model)
