@@ -7,17 +7,20 @@ from bs_python_utils.bsutils import bs_error_abort, mkdir_if_needed
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.insurance_d2_m2_values import (
     S_penalties,
+    cost_non_insur,
     d0_S_fun,
     d0_val_B,
     d0_val_C,
     d1_S_fun,
     d1_val_C,
+    expected_positive_loss,
     multiply_each_col,
+    proba_claim,
     split_y,
     val_D,
     val_I,
 )
-from multidim_screening_plain.utils import plots_dir, results_dir
+from multidim_screening_plain.utils import contracts_vector, plots_dir, results_dir
 
 
 def create_model(model_name: str) -> ScreeningModel:
@@ -341,3 +344,46 @@ def plot_results(results: ScreeningResults) -> None:
     #     U_second,
     #     path=model_plotdir / "utilities",
     # )
+
+
+def additional_results(
+    results: ScreeningResults,
+) -> None:
+    """Adds more results to the `ScreeningResults` object
+
+    Args:
+        results: the results
+    """
+    model = results.model
+    sigmas, deltas = model.theta_mat[:, 0], model.theta_mat[:, 1]
+    s, loading = model.params
+    results.additional_results_names = [
+        "Second-best actuarial premium",
+        "Cost of non-insurance",
+        "Expected positive loss",
+        "Probability of claim",
+    ]
+    FB_y_vec = contracts_vector(model.FB_y)
+    SB_y_vec = contracts_vector(results.SB_y)
+    FB_values_coverage = np.diag(b_fun(FB_y_vec, model.theta_mat, model.params))
+    FB_actuarial_premia = np.diag(val_D(FB_y_vec, deltas, s))
+    SB_values_coverage = np.diag(b_fun(SB_y_vec, model.theta_mat, model.params))
+    SB_actuarial_premia = np.diag(val_D(SB_y_vec, deltas, s))
+    results.additional_results = [
+        FB_actuarial_premia,
+        SB_actuarial_premia,
+        cost_non_insur(sigmas, deltas, s),
+        expected_positive_loss(deltas, s),
+        proba_claim(deltas, s),
+        FB_values_coverage,
+        SB_values_coverage,
+    ]
+    results.additional_results_names = [
+        "Actuarial premium at first-best",
+        "Actuarial premium at second-best",
+        "Cost of non-insurance",
+        "Expected positive loss",
+        "Probability of claim",
+        "Value of first-best coverage",
+        "Value of second-best coverage",
+    ]

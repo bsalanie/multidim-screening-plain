@@ -51,6 +51,14 @@ class ScreeningModel:
     def rescale_step(self, mult_fac: float) -> None:
         self.M = 2.0 * (self.N - 1) * mult_fac
 
+    def __repr__(self) -> str:
+        clstr = f"\nModel {self.model_id}: {self.N} {self.d}-dimensional types\n"
+        clstr += f" and {self.m}-dimensional contracts\n"
+        clstr += "    the model parameters are:\n"
+        for name, par in zip(self.params_names, self.params, strict=True):
+            clstr += f"    {name}: {par: > 10.3f}\n"
+        return clstr + "\n"
+
 
 @dataclass
 class ScreeningResults:
@@ -69,6 +77,8 @@ class ScreeningResults:
     info_rents: np.ndarray = field(init=False)
     FB_surplus: np.ndarray = field(init=False)
     SB_surplus: np.ndarray = field(init=False)
+    additional_results: list | None = None
+    additional_results_names: list | None = None
 
     def add_utilities(self, S_first, U_second, S_second) -> None:
         """Add the utilities to the results.
@@ -107,6 +117,21 @@ class ScreeningResults:
             df_output[f"y_{i}"] = y_mat[:, i]
             df_output[f"FB_y_{i}"] = model.FB_y[:, i]
 
+        FB_y_columns = [f"FB_y_{i}" for i in range(m)]
+        y_columns = [f"y_{i}" for i in range(m)]
+        theta_columns = [f"theta_{i}" for i in range(m)]
+        df_output = df_output[
+            theta_columns
+            + FB_y_columns
+            + y_columns
+            + ["FB_surplus", "SB_surplus", "info_rents"]
+        ]
+        if self.additional_results and self.additional_results_names:
+            for name, res in zip(
+                self.additional_results_names, self.additional_results, strict=True
+            ):
+                df_output[name] = res.round(3)
+
         with pd.option_context(  # 'display.max_rows', None,
             "display.max_columns",
             None,
@@ -116,12 +141,11 @@ class ScreeningResults:
             print(df_output)
 
         model_resdir = cast(Path, model.resdir)
+        df_output[y_columns].to_csv(model_resdir / "second_best_contracts.csv")
         np.savetxt(model_resdir / "IC_binds.txt", self.IC_binds)
         np.savetxt(model_resdir / "IR_binds.txt", self.IR_binds)
         np.savetxt(model_resdir / "v_mat.txt", self.v_mat)
 
-        y_columns = [f"y_{i}" for i in range(m)]
-        df_output[y_columns].to_csv(model_resdir / "second_best_contracts.csv")
         df_output.to_csv(model_resdir / "all_results.csv")
 
         # save the value of the parameters of the model
@@ -129,3 +153,24 @@ class ScreeningResults:
         for k, v in zip(model.params_names, model.params, strict=True):
             df_params[k] = [v]
         df_params.to_csv(model_resdir / "params.csv")
+
+    def __repr__(self) -> str:
+        model = self.model
+        clstr = model.__repr__()
+        clstr += "\n    the optimal contracts are:\n"
+        clstr += (
+            "         type:                         first-best                  "
+            " second-best:\n"
+        )
+        for i in range(model.N):
+            for j in range(model.d):
+                clstr += f"{model.theta_mat[i, j]: >8.3f} "
+            clstr += ":\t"
+            for k in range(model.m):
+                clstr += f"{model.FB_y[i, k]: >8.3f} "
+            clstr += ";\t"
+            for k in range(model.m):
+                clstr += f"{self.SB_y[i, k]: >8.3f} "
+            clstr += "\n"
+
+        return clstr + "\n"

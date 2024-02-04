@@ -104,6 +104,17 @@ def S_deriv(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray) -> Any:
     return model_module.dS_fun(y, theta_mat, params)
 
 
+def add_results(
+    results: ScreeningResults,
+) -> None:
+    """Adds more results to the `ScreeningResults` object
+
+    Args:
+        results: the results
+    """
+    return cast(None, model_module.additional_results(results))
+
+
 def plot(results: ScreeningResults) -> None:
     """Plots the results
 

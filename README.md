@@ -6,8 +6,12 @@
 [![Commit activity](https://img.shields.io/github/commit-activity/m/bsalanie/multidim-screening-plain)](https://img.shields.io/github/commit-activity/m/bsalanie/multidim-screening-plain)
 [![License](https://img.shields.io/github/license/bsalanie/multidim-screening-plain)](https://img.shields.io/github/license/bsalanie/multidim-screening-plain)
 
-multidimensional screening without Numba
+Multidimensional screening without Numba
 
 - **Github repository**: <https://github.com/bsalanie/multidim-screening-plain/>
 - **Documentation** <https://bsalanie.github.io/multidim-screening-plain/>
 
+
+## TO DO
+- fix the plots
+- optimize the code.

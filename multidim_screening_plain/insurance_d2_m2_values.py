@@ -131,7 +131,7 @@ def val_B(y: np.ndarray, sigmas: np.ndarray, deltas: np.ndarray, s: float) -> An
         s: the dispersion of losses
 
     Returns:
-        the values of $B(y,\\sigma,\\delta,s)$ as an $(m, k)$ matrix
+        the values of $B(y,\\sigma,\\delta,s)$ as a $(q, k)$ matrix
     """
     y_0, _ = split_y(y)
     argu1 = -deltas / s - sigmas * s
@@ -157,7 +157,7 @@ def val_C(y: np.ndarray, sigmas: np.ndarray, deltas: np.ndarray, s: float) -> An
         s: the dispersion of losses
 
     Returns:
-        the value of $C(y,\\sigma,\\delta,s)$ as an $(m, k)$ matrix
+        the value of $C(y,\\sigma,\\delta,s)$ as a $(q, k)$ matrix
     """
     y_0, y_1 = split_y(y)
     dy0s = my_outer_add(deltas, -y_0) / s
@@ -178,7 +178,7 @@ def val_D(y: np.ndarray, deltas: np.ndarray, s: float) -> Any:
         s: the dispersion of losses
 
     Returns:
-        the value of $D(y,\\sigma,\\delta,s)$ as an $(m, k)$ matrix
+        the value of $D(y,\\sigma,\\delta,s)$ as a $(q, k)$ matrix
     """
     y_0, y_1 = split_y(y)
     dy0s = my_outer_add(deltas, -y_0) / s
@@ -196,7 +196,7 @@ def val_I(y: np.ndarray, sigmas: np.ndarray, deltas: np.ndarray, s: float) -> An
         s: the dispersion of losses
 
     Returns:
-        the value of $I(y,\\sigma,\\delta,s)$ as an $(m, k)$ matrix
+        the value of $I(y,\\sigma,\\delta,s)$ as a $(q, k)$ matrix
     """
     return add_to_each_col(
         val_B(y, sigmas, deltas, s) + val_C(y, sigmas, deltas, s), val_A(deltas, s)
@@ -236,7 +236,7 @@ def d0_val_B(y, sigmas, deltas, s):
         s: the dispersion of losses
 
     Returns:
-        an $(m, k)$-matrix
+        a $(q, k)$-matrix
     """
     y_0, _ = split_y(y)
     sigma_s = s * sigmas
@@ -260,7 +260,7 @@ def d0_val_C(y, sigmas, deltas, s):
         s: the dispersion of losses
 
     Returns:
-        a $(2, k)$-matrix
+        a $(q, k)$-matrix
     """
     y_0, y_1 = split_y(y)
     dy0s = my_outer_add(deltas, -y_0) / s
@@ -296,7 +296,7 @@ def d1_val_C(y, sigmas, deltas, s):
         s: the dispersion of losses
 
     Returns:
-        a $(2, k)$-matrix
+        a $(q, k)$-matrix
     """
     y_0, y_1 = split_y(y)
     dy0s = my_outer_add(deltas, -y_0) / s
@@ -320,7 +320,7 @@ def d0_val_D(y, deltas, s):
         s: the dispersion of losses
 
     Returns:
-        a $(2, k)$-matrix
+        a $(q, k)$-matrix
     """
     y_0, y_1 = split_y(y)
     dy0s = my_outer_add(deltas, -y_0) / s
@@ -336,7 +336,7 @@ def d1_val_D(y, deltas, s):
         s: the dispersion of losses
 
     Returns:
-        a $(2, k)$-matrix
+        a $(q, k)$-matrix
     """
     y_0, _ = split_y(y)
     dy0s = my_outer_add(deltas, -y_0) / s
@@ -463,3 +463,16 @@ def d1_S_fun(y, sigmas, deltas, s, loading):
         - (1.0 + loading) * d1_val_D(y, deltas, s)
         - d1_S_penalties(y)
     )
+
+
+def proba_claim(deltas, s):
+    return norm.cdf(deltas / s, 0.0, 1.0)
+
+
+def expected_positive_loss(deltas, s):
+    return s * norm.pdf(deltas / s, 0.0, 1.0) / proba_claim(deltas, s) + deltas
+
+
+def cost_non_insur(sigmas, deltas, s):
+    y_no_insur = np.array([0.0, 1.0])
+    return np.log(val_I(y_no_insur, sigmas, deltas, s))[:, 0] / sigmas

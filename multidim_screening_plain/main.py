@@ -16,6 +16,7 @@ from multidim_screening_plain.solver import (
     solve,
 )
 from multidim_screening_plain.specif import (
+    add_results,
     initialize_contracts,
     model_name,
     setup_model,
@@ -61,6 +62,12 @@ if __name__ == "__main__":
 
         S_first, U_second, S_second = compute_utilities(results)
         results.add_utilities(S_first, U_second, S_second)
+        add_results(results)
+
         results.output_results()
+
+        # print(model)
+
+        print(results)
 
         # plot(results)
