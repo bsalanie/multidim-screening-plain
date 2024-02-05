@@ -28,9 +28,9 @@ if __name__ == "__main__":
 
     model = setup_model(model_name)
 
-    do_first_best = False
-    do_solve = False
-    do_plots = True
+    do_first_best = True
+    do_solve = True
+    do_plots = False
 
     start_from_first_best = True
     start_from_current = not start_from_first_best
@@ -54,7 +54,7 @@ if __name__ == "__main__":
             model,
             warmstart=True,
             scale=True,
-            it_max=1_000_000,
+            it_max=100,  # 1_000_000,
             stepratio=1.0,
             tol_primal=1e-4,
             tol_dual=1e-4,

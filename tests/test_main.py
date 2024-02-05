@@ -1,5 +1,6 @@
 import numpy as np
 from bs_python_utils.bs_opt import check_gradient_scalar_function
+from scipy.stats import norm
 
 from multidim_screening_plain.insurance_d2_m2 import S_fun, b_fun, db_fun, dS_fun
 from multidim_screening_plain.insurance_d2_m2_values import (
@@ -9,6 +10,12 @@ from multidim_screening_plain.insurance_d2_m2_values import (
     val_B,
     val_C,
 )
+from multidim_screening_plain.utils import bs_norm_cdf
+
+
+def test_norm_cdf():
+    x = np.linspace(-8.0, 8.0, 100).reshape((20, 5))
+    assert np.allclose(bs_norm_cdf(x), norm.cdf(x), rtol=1e-6, atol=1e-6)
 
 
 def test_dvalB():

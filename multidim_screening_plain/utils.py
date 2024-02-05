@@ -11,6 +11,36 @@ results_dir = Path.cwd() / "results"
 plots_dir = Path.cwd() / "plots"
 
 
+INV_SQRT_2 = np.sqrt(0.5)
+INV_SQRT_2PI = 1.0 / np.sqrt(2 * np.pi)
+
+
+def bs_norm_pdf(x: np.ndarray) -> np.ndarray:
+    """normal PDF."""
+    return cast(np.ndarray, INV_SQRT_2PI * np.exp(-0.5 * x * x))
+
+
+def bs_norm_cdf(x: np.ndarray) -> np.ndarray:
+    """Fast standard normal CDF based on Numerical Recipes.
+
+    This function is accurate to 6 decimal places.
+    """
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    z = x * INV_SQRT_2
+    sign_z = np.sign(z)
+    abs_z = np.abs(z)
+    t = 1.0 / (1.0 + p * abs_z)
+    y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * np.exp(-z * z)
+
+    return cast(np.ndarray, (1.0 + sign_z * y) / 2.0)
+
+
 def contracts_vector(y_mat: np.ndarray) -> np.ndarray:
     """converts a matrix of contracts to a vector
 

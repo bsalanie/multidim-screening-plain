@@ -48,7 +48,7 @@ def create_model(model_name: str) -> ScreeningModel:
         the ScreeningModel object
     """
     # size of grid for types in each dimension
-    n0 = n1 = 2
+    n0 = n1 = 5
     N = n0 * n1
 
     # dimension of contracts
@@ -313,6 +313,9 @@ def plot_results(model: ScreeningModel) -> None:
             "SB_surplus": "Second-best surplus",
             "info_rents": "Informational rent",
         }
+    )
+    df_all_results.loc[:, "Second-best copay"] = np.clip(
+        df_all_results["Second-best copay"].values, 0.0, 1.0
     )
 
     # first plot the first best

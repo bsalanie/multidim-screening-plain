@@ -327,7 +327,7 @@ def plot_copays(
     df = df_second[Copay < 0.99]
     rng = np.random.default_rng()
     # jiggle the points a bit
-    df.loc[:, "Copay"] += rng.normal(0.0, 0.01, df.shape[0])
+    df.loc[:, "Copay"] += rng.uniform(0.0, 0.01, df.shape[0])
     base = alt.Chart(df).encode(
         x=alt.X(
             "Risk location:Q",

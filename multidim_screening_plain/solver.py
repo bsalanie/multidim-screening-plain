@@ -455,6 +455,7 @@ def solve(
         y_mat = contracts_matrix(y, N)
         if it % 100 == 0 and log:
             print("\n\ty is:")
+            print(y)
             for i in range(N):
                 print(" ".join([f"{y_mat[i, k]: >10.4f}" for k in range(m)]))
             np.savetxt(
