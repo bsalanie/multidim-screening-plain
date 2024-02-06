@@ -28,11 +28,11 @@ if __name__ == "__main__":
 
     model = setup_model(model_name)
 
-    do_first_best = True
+    do_first_best = False
     do_solve = True
-    do_plots = False
+    do_plots = True
 
-    start_from_first_best = True
+    start_from_first_best = False
     start_from_current = not start_from_first_best
 
     FB_y = np.empty((model.N, model.m))
@@ -44,6 +44,8 @@ if __name__ == "__main__":
 
     model.add_first_best(FB_y)
 
+    print(model)
+
     if do_solve:  # we solve for the second best
         # initial values
         y_init, free_y = initialize_contracts(model, start_from_first_best, FB_y)
@@ -54,12 +56,11 @@ if __name__ == "__main__":
             model,
             warmstart=True,
             scale=True,
-            it_max=100,  # 1_000_000,
+            it_max=100_000,
             stepratio=1.0,
-            tol_primal=1e-4,
-            tol_dual=1e-4,
+            tol_primal=1e-5,
+            tol_dual=1e-5,
             fix_top=True,
-            free_y=free_y,
         )
 
         S_first, U_second, S_second = compute_utilities(results)

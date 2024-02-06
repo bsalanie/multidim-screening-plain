@@ -8,6 +8,8 @@ import scipy.linalg as spla
 from bs_python_utils.bsnputils import check_matrix, check_vector
 from bs_python_utils.bsutils import bs_error_abort
 
+from multidim_screening_plain.utils import contracts_matrix, print_matrix
+
 
 @dataclass
 class ScreeningModel:
@@ -47,6 +49,10 @@ class ScreeningModel:
         self.y_init = y_init
         self.free_y = free_y
         self.norm_Lambda = max([spla.svdvals(JLy[i, :, :])[0] for i in range(self.d)])
+        print("\n Free contracts in y_init:")
+        print(free_y)
+        print("\n Initial contracts:")
+        print_matrix(contracts_matrix(y_init, self.N))
 
     def rescale_step(self, mult_fac: float) -> None:
         self.M = 2.0 * (self.N - 1) * mult_fac
@@ -141,18 +147,20 @@ class ScreeningResults:
             print(df_output)
 
         model_resdir = cast(Path, model.resdir)
-        df_output[y_columns].to_csv(model_resdir / "second_best_contracts.csv")
+        df_output[y_columns].to_csv(
+            model_resdir / "second_best_contracts.csv", index=False
+        )
         np.savetxt(model_resdir / "IC_binds.txt", self.IC_binds)
         np.savetxt(model_resdir / "IR_binds.txt", self.IR_binds)
         np.savetxt(model_resdir / "v_mat.txt", self.v_mat)
 
-        df_output.to_csv(model_resdir / "all_results.csv")
+        df_output.to_csv(model_resdir / "all_results.csv", index=False)
 
         # save the value of the parameters of the model
         df_params = pd.DataFrame()
         for k, v in zip(model.params_names, model.params, strict=True):
             df_params[k] = [v]
-        df_params.to_csv(model_resdir / "params.csv")
+        df_params.to_csv(model_resdir / "params.csv", index=False)
 
     def __repr__(self) -> str:
         model = self.model

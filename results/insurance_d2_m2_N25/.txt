@@ -28,3 +28,8 @@ s = 4.0, loading = 0.25
 convergence = False, iterations = 100, elapsed time = 0:00:51.826780
 primal residual = 2.11e+02 tol,  dual residual = 5.06e+01 tol
 
+N = 25, tau = 2.68e-01, sig = 2.68e-01, step ratio = 1.0, primal tol = 7.07e-04, dual tol = 2.50e-03
+s = 4.0, loading = 0.25
+convergence = False, iterations = 1000, elapsed time = 0:11:40.366724
+primal residual = 9.73e+01 tol,  dual residual = 4.23e+01 tol
+

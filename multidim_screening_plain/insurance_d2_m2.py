@@ -33,7 +33,11 @@ from multidim_screening_plain.insurance_d2_m2_values import (
     val_D,
     val_I,
 )
-from multidim_screening_plain.utils import contracts_vector, plots_dir, results_dir
+from multidim_screening_plain.utils import (
+    contracts_vector,
+    plots_dir,
+    results_dir,
+)
 
 
 def create_model(model_name: str) -> ScreeningModel:
@@ -200,16 +204,17 @@ def create_initial_contracts(
         y_first_best_mat: the `(N, m)` matrix of first best contracts. Defaults to None.
 
     Returns:
-        tuple[np.ndarray, list]: initial contracts (an `(N,m)` matrix) and a list of types for whom
+        tuple[np.ndarray, list]: initial contracts (an `(m *N)` vector) and a list of types for whom
             the contracts are to be determined.
     """
     N = model.N
     if start_from_first_best:
         if y_first_best_mat is None:
             bs_error_abort("We start from the first best but y_first_best_mat is None")
-        y_init = y_first_best_mat
+        y_init = contracts_vector(y_first_best_mat)
         set_fixed_y: set[int] = set()
         set_not_insured: set[int] = set()
+        free_y = list(range(N))
     else:
         model_resdir = cast(Path, model.resdir)
         y_init = np.loadtxt(model_resdir / "current_y.txt")
@@ -232,26 +237,22 @@ def create_initial_contracts(
         #     )
         set_fixed_y = set_not_insured
 
-    set_free_y = set(range(N)).difference(set_fixed_y)
-    fixed_y = list(set_fixed_y)
-    free_y = list(set_free_y)
-    not_insured = list(set_not_insured)
-    # only_deductible = list(set_only_deductible)
+        set_free_y = set(range(N)).difference(set_fixed_y)
+        list(set_fixed_y)
+        free_y = list(set_free_y)
+        not_insured = list(set_not_insured)
+        # only_deductible = list(set_only_deductible)
+        rng = np.random.default_rng(645)
 
-    print(f"{free_y=}")
-    print(f"{fixed_y=}")
+        MIN_Y0, MAX_Y0 = 0.3, np.inf
+        MIN_Y1, MAX_Y1 = 0.0, np.inf
+        y_init = cast(np.ndarray, y_init)
+        yinit_0 = np.clip(y_init[:, 0] + rng.normal(0, 0.00000, N), MIN_Y0, MAX_Y0)
+        yinit_1 = np.clip(y_init[:, 1] + rng.normal(0, 0.00000, N), MIN_Y1, MAX_Y1)
+        yinit_0[not_insured] = 0.0
+        yinit_1[not_insured] = 1.0
 
-    rng = np.random.default_rng(645)
-
-    MIN_Y0, MAX_Y0 = 0.3, np.inf
-    MIN_Y1, MAX_Y1 = 0.0, np.inf
-    y_init = cast(np.ndarray, y_init)
-    yinit_0 = np.clip(y_init[:, 0] + rng.normal(0, 0.00000, N), MIN_Y0, MAX_Y0)
-    yinit_1 = np.clip(y_init[:, 1] + rng.normal(0, 0.00000, N), MIN_Y1, MAX_Y1)
-    yinit_0[not_insured] = 0.0
-    yinit_1[not_insured] = 1.0
-
-    y_init = cast(np.ndarray, np.concatenate((yinit_0, yinit_1)))
+        y_init = cast(np.ndarray, np.concatenate((yinit_0, yinit_1)))
 
     return y_init, free_y
 

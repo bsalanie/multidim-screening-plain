@@ -10,7 +10,23 @@ from multidim_screening_plain.insurance_d2_m2_values import (
     val_B,
     val_C,
 )
-from multidim_screening_plain.utils import bs_norm_cdf
+from multidim_screening_plain.utils import (
+    bs_norm_cdf,
+    contracts_matrix,
+    contracts_vector,
+)
+
+
+def test_contracts_vector():
+    y_mat = np.arange(1, 11).reshape((2, 5))
+    y_vec = contracts_vector(y_mat)
+    assert np.allclose(y_vec, np.array([1, 6, 2, 7, 3, 8, 4, 9, 5, 10]))
+
+
+def test_contracts_matrix():
+    y = np.array([1, 6, 2, 7, 3, 8, 4, 9, 5, 10])
+    y_mat = contracts_matrix(y, 2)
+    assert np.allclose(y_mat, np.array([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]))
 
 
 def test_norm_cdf():

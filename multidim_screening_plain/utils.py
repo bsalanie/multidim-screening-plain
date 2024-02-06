@@ -15,6 +15,18 @@ INV_SQRT_2 = np.sqrt(0.5)
 INV_SQRT_2PI = 1.0 / np.sqrt(2 * np.pi)
 
 
+def print_row(matrix: np.ndarray, row: int) -> None:
+    """prints a row of a matrix."""
+    print(" ".join(f"{matrix[row, j]: > 10.4f}" for j in range(matrix.shape[1])))
+
+
+def print_matrix(matrix: np.ndarray) -> None:
+    """prints a matrix."""
+    for i in range(matrix.shape[0]):
+        print_row(matrix, i)
+    print("\n")
+
+
 def bs_norm_pdf(x: np.ndarray) -> np.ndarray:
     """normal PDF."""
     return cast(np.ndarray, INV_SQRT_2PI * np.exp(-0.5 * x * x))

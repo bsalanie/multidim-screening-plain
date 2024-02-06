@@ -15,7 +15,13 @@ from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.specif import S_deriv, S_function, b_deriv, b_function
-from multidim_screening_plain.utils import L2_norm, contracts_matrix, contracts_vector
+from multidim_screening_plain.utils import (
+    L2_norm,
+    contracts_matrix,
+    contracts_vector,
+    print_matrix,
+    print_row,
+)
 
 
 def construct_D(N: int) -> tuple[sparse.csr_matrix, float]:
@@ -159,15 +165,13 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
             print(f" Done {i=} types out of {N}")
             print(f"\ni={i}, sigma={sigma}, delta={delta}:")
             print("\t\t first-best contract:")
-            for j in range(m):
-                print(f"\t{y_first[i, j]: > 10.4f}", end=" ")
-            print("\n")
+            print_row(y_first, i)
 
     df_first_best_contracts = pd.DataFrame(
-        y_first, columns=[f"y_{i}" for i in range(m)]
+        y_first.round(6), columns=[f"y_{i}" for i in range(m)]
     )
     df_first_best_contracts.to_csv(
-        cast(Path, model.resdir) / "first_best_contracts.csv"
+        cast(Path, model.resdir) / "first_best_contracts.csv", index=False
     )
     return y_first
 
@@ -247,6 +251,7 @@ def prox_minusS(
     model: ScreeningModel,
     z: np.ndarray,
     tau: float,
+    y_current: np.ndarray,
     fix_top: bool = False,
     free_y: list | None = None,
 ) -> np.ndarray:
@@ -255,6 +260,7 @@ def prox_minusS(
     Args:
         model: the model
         z: an `m N`-vector
+        y_current: the current value of the`m*N` vector of contracts
         tau: scale factor
         fix_top: True if first-best imposed at top
         free_y: a list of types for which we optimize over contracts
@@ -267,7 +273,7 @@ def prox_minusS(
     m = model.m
     params = model.params
     f = model.f
-    y_first_best = model.FB_y
+
     list_args = [
         [
             np.array([z[k * N + i] for k in range(m)]),
@@ -287,11 +293,11 @@ def prox_minusS(
 
     # print(f"{working_i0=}")
 
-    y = np.empty(N * m)
+    y = y_current
     if fix_top:
         # we fix the second-best at the first-best at the top
         for k in range(m):
-            y[k * N + N - 1] = y_first_best[-1, k]
+            y[k * N + N - 1] = model.FB_y[-1, k]
     res = prox_work_func(list_working)
     for i in range(n_working):
         res_i = res[i]
@@ -370,13 +376,11 @@ def solve(
     tol_primal: float = 1e-6,
     tol_dual: float = 1e-6,
     fix_top: bool = True,
-    free_y: list | None = None,
     mult_fac: float = 1.0,
 ):
     # initialization
     N = model.N
     N2 = N * N
-    m = model.m
     model.rescale_step(mult_fac)
 
     _, gamma_proj = construct_D(N)
@@ -416,8 +420,9 @@ def solve(
             model,
             y_old - tau * LTv_old,
             tau,
+            y_old,
             fix_top=fix_top,
-            free_y=free_y,
+            free_y=model.free_y,
         )
         # print(f" in proj {y[25]=}")
         # print("\t" * 10, f"change in norm {spla.norm(y - y_old) =}")
@@ -455,12 +460,10 @@ def solve(
         y_mat = contracts_matrix(y, N)
         if it % 100 == 0 and log:
             print("\n\ty is:")
-            print(y)
-            for i in range(N):
-                print(" ".join([f"{y_mat[i, k]: >10.4f}" for k in range(m)]))
+            print_matrix(y_mat)
             np.savetxt(
                 cast(Path, model.resdir) / "current_y.txt",
-                np.round(y_mat, 4),
+                np.round(y_mat, 6),
             )
             print(f"\n\t\t\t{criteria=} at {it=}\n")
             print(f"\t\t\t\tprimal: {rec_primal_residual[-1] / tol_primal: > 10.2f}")
@@ -483,7 +486,7 @@ def solve(
             f" dual residual = {rec_dual_residual[-1] / tol_dual:.2e} tol"
         )
 
-    with open(cast(Path, model.resdir) / ".txt", "a") as f:
+    with open(cast(Path, model.resdir) / "log.txt", "a") as f:
         f.write(f"N = {N}, tau = {tau:.2e}, sig = {sig:.2e}, ")
         f.write(f"step ratio = {stepratio}, primal tol = {tol_primal:.2e}, ")
         f.write(
