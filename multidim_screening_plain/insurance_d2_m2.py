@@ -27,7 +27,6 @@ from multidim_screening_plain.insurance_d2_m2_values import (
     d1_S_fun,
     d1_val_C,
     expected_positive_loss,
-    multiply_each_col,
     proba_claim,
     split_y,
     val_D,
@@ -35,6 +34,7 @@ from multidim_screening_plain.insurance_d2_m2_values import (
 )
 from multidim_screening_plain.utils import (
     contracts_vector,
+    multiply_each_col,
     plots_dir,
     results_dir,
 )
@@ -52,7 +52,7 @@ def create_model(model_name: str) -> ScreeningModel:
         the ScreeningModel object
     """
     # size of grid for types in each dimension
-    n0 = n1 = 5
+    n0 = n1 = 10
     N = n0 * n1
 
     # dimension of contracts
@@ -247,8 +247,9 @@ def create_initial_contracts(
         MIN_Y0, MAX_Y0 = 0.3, np.inf
         MIN_Y1, MAX_Y1 = 0.0, np.inf
         y_init = cast(np.ndarray, y_init)
-        yinit_0 = np.clip(y_init[:, 0] + rng.normal(0, 0.00000, N), MIN_Y0, MAX_Y0)
-        yinit_1 = np.clip(y_init[:, 1] + rng.normal(0, 0.00000, N), MIN_Y1, MAX_Y1)
+        perturbation = 0.001
+        yinit_0 = np.clip(y_init[:, 0] + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
+        yinit_1 = np.clip(y_init[:, 1] + rng.normal(0, perturbation, N), MIN_Y1, MAX_Y1)
         yinit_0[not_insured] = 0.0
         yinit_1[not_insured] = 1.0
 
@@ -303,17 +304,21 @@ def additional_results(
 def plot_results(model: ScreeningModel) -> None:
     model_resdir = cast(Path, model.resdir)
     model_plotdir = str(cast(Path, model.plotdir))
-    df_all_results = pd.read_csv(model_resdir / "all_results.csv").rename(
-        columns={
-            "FB_y_0": "First-best deductible",
-            "y_0": "Second-best deductible",
-            "y_1": "Second-best copay",
-            "theta_0": "Risk-aversion",
-            "theta_1": "Risk location",
-            "FB_surplus": "First-best surplus",
-            "SB_surplus": "Second-best surplus",
-            "info_rents": "Informational rent",
-        }
+    df_all_results = (
+        pd.read_csv(model_resdir / "all_results.csv")
+        .rename(
+            columns={
+                "FB_y_0": "First-best deductible",
+                "y_0": "Second-best deductible",
+                "y_1": "Second-best copay",
+                "theta_0": "Risk-aversion",
+                "theta_1": "Risk location",
+                "FB_surplus": "First-best surplus",
+                "SB_surplus": "Second-best surplus",
+                "info_rents": "Informational rent",
+            }
+        )
+        .round(3)
     )
     df_all_results.loc[:, "Second-best copay"] = np.clip(
         df_all_results["Second-best copay"].values, 0.0, 1.0

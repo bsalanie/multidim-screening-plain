@@ -15,6 +15,57 @@ INV_SQRT_2 = np.sqrt(0.5)
 INV_SQRT_2PI = 1.0 / np.sqrt(2 * np.pi)
 
 
+def add_to_each_col(mat: np.ndarray, vec: np.ndarray) -> np.ndarray:
+    """adds a vector to each column of a matrix
+
+    Args:
+        mat: a $(q, k)$-matrix
+        vec: a $q$-vector
+
+    Returns:
+        a $(q, k)$-matrix, the result of adding `vec` to each column of `mat`
+    """
+    q, k = mat.shape
+    c = np.empty((q, k))
+    for i in range(k):
+        c[:, i] = mat[:, i] + vec
+    return c
+
+
+def multiply_each_col(mat: np.ndarray, vec: np.ndarray) -> np.ndarray:
+    """multiplies each column of a matrix by a vector
+
+    Args:
+        mat: a $(q, k)$-matrix
+        vec: a $q$-vector
+
+    Returns:
+        a $(q, k)$-matrix, the result of multiplying each column of `mat` by  `vec`
+    """
+    q, k = mat.shape
+    c = np.empty((q, k))
+    for i in range(k):
+        c[:, i] = mat[:, i] * vec
+    return c
+
+
+def my_outer_add(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """outer sum of two vectors
+
+    Args:
+        a: a $q$-vector
+        b: a $k$-vector
+
+    Returns:
+        a $(q,k)$-matrix, the outer sum of `a` and `b`
+    """
+    q, k = a.size, b.size
+    c = np.empty((q, k))
+    for i in range(q):
+        c[i, :] = a[i] + b
+    return c
+
+
 def print_row(matrix: np.ndarray, row: int) -> None:
     """prints a row of a matrix."""
     print(" ".join(f"{matrix[row, j]: > 10.4f}" for j in range(matrix.shape[1])))

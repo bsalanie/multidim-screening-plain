@@ -5,16 +5,49 @@ from scipy.stats import norm
 from multidim_screening_plain.insurance_d2_m2 import S_fun, b_fun, db_fun, dS_fun
 from multidim_screening_plain.insurance_d2_m2_values import (
     d0_val_B,
+    d0_val_BC,
     d0_val_C,
     d1_val_C,
     val_B,
     val_C,
+    val_I,
+    val_I_new,
 )
 from multidim_screening_plain.utils import (
+    add_to_each_col,
     bs_norm_cdf,
     contracts_matrix,
     contracts_vector,
+    multiply_each_col,
+    my_outer_add,
 )
+
+
+def test_multiply_each_col():
+    mat = np.arange(1, 7).reshape((2, 3))
+    vec = np.array([2, 3])
+    res_th = np.array([[2, 4, 6], [12, 15, 18]])
+    res_th2 = mat * vec.reshape((-1, 1))
+    assert np.allclose(res_th, multiply_each_col(mat, vec))
+    assert np.allclose(res_th, res_th2)
+
+
+def test_add_to_each_col():
+    mat = np.arange(1, 7).reshape((2, 3))
+    vec = np.array([2, 3])
+    res_th = np.array([[3, 4, 5], [7, 8, 9]])
+    res_th2 = mat + vec.reshape((-1, 1))
+    assert np.allclose(res_th, add_to_each_col(mat, vec))
+    assert np.allclose(res_th, res_th2)
+
+
+def test_my_outer_add():
+    vec1 = np.array([2, 3])
+    vec2 = np.array([1, 6, 9])
+    res_th = np.array([[3, 8, 11], [4, 9, 12]])
+    res_th2 = np.add.outer(vec1, vec2)
+    assert np.allclose(res_th, my_outer_add(vec1, vec2))
+    assert np.allclose(res_th, res_th2)
 
 
 def test_contracts_vector():
@@ -117,3 +150,28 @@ def test_dS():
 
     anal, num = check_gradient_scalar_function(SdS, y, args=[])
     assert np.allclose(anal, num, rtol=1e-5, atol=1e-5)
+
+
+def test_d0_val_BC():
+    y = np.array([0.3, 0.2])
+    theta_mat1 = np.array([[0.5, -6.0]])
+    sigmas = np.array([theta_mat1[0, 0]])
+    deltas = np.array([theta_mat1[0, 1]])
+    params = np.array([4.0, 0.25])
+    s = params[0]
+    d0_B = d0_val_B(y, sigmas, deltas, s)[0, 0]
+    d0_C = d0_val_C(y, sigmas, deltas, s)[0, 0]
+    d0_BC = d0_val_BC(y, sigmas, deltas, s)[0, 0]
+    assert np.allclose(d0_BC, d0_B + d0_C)
+
+
+def test_new_val_I():
+    y = np.array([0.3, 0.2])
+    theta_mat1 = np.array([[0.5, -6.0]])
+    sigmas = np.array([theta_mat1[0, 0]])
+    deltas = np.array([theta_mat1[0, 1]])
+    params = np.array([4.0, 0.25])
+    s = params[0]
+    value = val_I(y, sigmas, deltas, s)[0, 0]
+    new_value = val_I_new(y, sigmas, deltas, s)[0, 0]
+    assert np.allclose(value, new_value)

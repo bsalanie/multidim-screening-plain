@@ -264,7 +264,7 @@ def plot_contract_models(
         ),
         y=alt.Y(f"{varname}:Q"),
         color=alt.Color("Risk-aversion:N"),
-        tooltip=["Risk-aversion", "Risk location", varname],
+        tooltip=["Risk-aversion", "Risk location", "Deductible", "Copay"],
     )
     ch_points = base.mark_point(filled=True, size=50)
     ch_lines = base.mark_line(strokeWidth=0.5)
@@ -296,7 +296,7 @@ def plot_contract_riskavs(
         ),
         y=alt.Y(f"{varname}:Q"),
         color=alt.Color("Model:N"),
-        tooltip=["Risk-aversion", "Risk location", varname],
+        tooltip=["Risk-aversion", "Risk location", "Deductible", "Copay"],
     )
     ch_points = base.mark_point(filled=True, size=50)
     ch_lines = base.mark_line(strokeWidth=0.5)
@@ -338,7 +338,7 @@ def plot_copays(
             "Copay:Q", title="Copay", scale=alt.Scale(domain=set_axis(df.Copay.values))
         ),
         color=alt.Color("Risk-aversion:N"),
-        tooltip=["Risk-aversion", "Risk location", "Copay"],
+        tooltip=["Risk-aversion", "Risk location", "Deductible", "Copay"],
     )
     ch_points = base.mark_point(filled=True, size=150)
     ch_lines = base.mark_line(strokeWidth=1)
