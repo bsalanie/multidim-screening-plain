@@ -3,6 +3,7 @@ from typing import cast
 
 import numpy as np
 import pandas as pd
+from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort, mkdir_if_needed
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
@@ -21,20 +22,13 @@ from multidim_screening_plain.insurance_d2_m2_plots import (
 from multidim_screening_plain.insurance_d2_m2_values import (
     S_penalties,
     cost_non_insur,
-    d0_S_fun,
-    d0_val_B,
-    d0_val_C,
-    d1_S_fun,
-    d1_val_C,
     expected_positive_loss,
     proba_claim,
-    split_y,
     val_D,
     val_I,
 )
 from multidim_screening_plain.utils import (
     contracts_vector,
-    multiply_each_col,
     plots_dir,
     results_dir,
 )
@@ -52,7 +46,7 @@ def create_model(model_name: str) -> ScreeningModel:
         the ScreeningModel object
     """
     # size of grid for types in each dimension
-    n0 = n1 = 10
+    n0 = n1 = 8
     N = n0 * n1
 
     # dimension of contracts
@@ -96,99 +90,119 @@ def create_model(model_name: str) -> ScreeningModel:
     )
 
 
-def b_fun(y, theta_mat, params):
-    """evaluates the value of the coverage
+def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
+    """evaluates the value of the coverage, and maybe its gradient
 
     Args:
         y:  a $2 k$-vector of $k$ contracts
         theta_mat: a $(q,2)$-vector of characteristics of types
         params: the parameters of the model
+        gr: whether we compute the gradient
 
     Returns:
-        a $(q,k)$-matrix: $b_{ij} = b(y_j, \theta_i)$
+        a $(q,k)$-matrix: $b_{ij} = b(y_j, \theta_i)$; and a $(2,q,k)$ array if `gr` is `True`
     """
     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
     s = params[0]
     y_no_insur = np.array([0.0, 1.0])
-    diff_logs = np.log(val_I(y_no_insur, sigmas, deltas, s)) - np.log(
-        val_I(y, sigmas, deltas, s)
-    )
-    return multiply_each_col(
-        diff_logs,
-        (1.0 / sigmas),
-    )
+    value_non_insured = val_I(y_no_insur, sigmas, deltas, s, gr)
+    value_insured = val_I(y, sigmas, deltas, s, gr)
+    if not gr:
+        diff_logs = np.log(value_non_insured) - np.log(value_insured)
+        return diff_logs / sigmas.reshape((-1, 1))
+    else:
+        # print(f"for {theta_mat=} and {y=}:")
+        # print(f"   we have {value_insured[0]=} and {value_non_insured[0]=}")
+        val_insured, dval_insured = value_insured
+        diff_logs = np.log(value_non_insured[0]) - np.log(val_insured)
+        denom_inv = 1.0 / (val_insured * sigmas.reshape((-1, 1)))
+        grad = np.empty((2, sigmas.size, y.size // 2))
+        grad[0, :, :] = -dval_insured[0, :, :] * denom_inv
+        grad[1, :, :] = -dval_insured[1, :, :] * denom_inv
+        return diff_logs / sigmas.reshape((-1, 1)), grad
 
 
-def db_fun(y, theta_mat, params):
-    """calculates both derivatives of the coverage
+# def db_fun(y, theta_mat, params):
+#     """calculates both derivatives of the coverage
+
+#     Args:
+#         y:  a $2 k$-vector of $k$ contracts
+#         theta_mat: a $(q,2)$-vector of characteristics of types
+#         params: the parameters of the model
+
+#     Returns:
+#         a $(2,q,k)$-array:  $db_{lij} = db(y_j, \theta_i)/dy_{jl}$
+#     """
+#     y_0, _ = split_y(y)
+#     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
+#     s = params[0]
+#     denom_inv = 1.0 / multiply_each_col(val_I(y, sigmas, deltas, s), sigmas)
+#     derivatives_b = np.empty((2, sigmas.size, y_0.size))
+#     derivatives_b[0, :, :] = (
+#         -(d0_val_B(y, sigmas, deltas, s) + d0_val_C(y, sigmas, deltas, s)) * denom_inv
+#     )
+#     derivatives_b[1, :, :] = -d1_val_C(y, sigmas, deltas, s) * denom_inv
+#     return derivatives_b
+
+
+def S_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
+    """evaluates the joint surplus, and maybe its gradient
 
     Args:
         y:  a $2 k$-vector of $k$ contracts
         theta_mat: a $(q,2)$-vector of characteristics of types
         params: the parameters of the model
+        gr: whether we compute the gradient
 
     Returns:
-        a $(2,q,k)$-array:  $db_{lij} = db(y_j, \theta_i)/dy_{jl}$
-    """
-    y_0, _ = split_y(y)
-    sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-    s = params[0]
-    denom_inv = 1.0 / multiply_each_col(val_I(y, sigmas, deltas, s), sigmas)
-    derivatives_b = np.empty((2, sigmas.size, y_0.size))
-    derivatives_b[0, :, :] = (
-        -(d0_val_B(y, sigmas, deltas, s) + d0_val_C(y, sigmas, deltas, s)) * denom_inv
-    )
-    derivatives_b[1, :, :] = -d1_val_C(y, sigmas, deltas, s) * denom_inv
-    return derivatives_b
-
-
-def S_fun(y, theta_mat, params):
-    """evaluates the joint surplus
-
-    Args:
-        y:  a $2 k$-vector of $k$ contracts
-        theta_mat: a $(q,2)$-vector of characteristics of types
-        params: the parameters of the model
-
-    Returns:
-        a $(q,k)$-matrix: $S_{ij} = S(y_j, \theta_i)$
+        a $(q,k)$-matrix: $S_{ij} = S(y_j, \theta_i)$; and an $(m,q,k)$ array if `gr` is `True`
     """
     deltas = theta_mat[:, 1]
     s, loading = params[0], params[1]
-    return (
-        b_fun(y, theta_mat, params)
-        - (1.0 + loading) * val_D(y, deltas, s)
-        - S_penalties(y)
+    b_vals, D_vals, penalties = (
+        b_fun(y, theta_mat, params, gr),
+        val_D(y, deltas, s, gr),
+        S_penalties(y, gr),
     )
+    if not gr:
+        return b_vals - (1.0 + loading) * D_vals - penalties
+    else:
+        # print(f"for {theta_mat=} and {y=}:")
+        # print(f"   we have {b_vals[0]=} and {D_vals[0]=} and {penalties[0]=}")
+        val_S = b_vals[0] - (1.0 + loading) * D_vals[0] - penalties[0]
+        grad_S = b_vals[1] - (1.0 + loading) * D_vals[1]
+        grad_S[0, :, :] -= penalties[1][0, :]
+        grad_S[1, :, :] -= penalties[1][1, :]
+        return val_S, grad_S
 
 
-def dS_fun(y, theta_mat, params):
-    """calculates both derivatives of the surplus
+# def dS_fun(y, theta_mat, params):
+#     """calculates both derivatives of the surplus
 
-    Args:
-        y:  a $2 k$-vector of $k$ contracts
-        theta_mat: a $(q,2)$-vector of characteristics of types
-        params: the parameters of the model
+#     Args:
+#         y:  a $2 k$-vector of $k$ contracts
+#         theta_mat: a $(q,2)$-vector of characteristics of types
+#         params: the parameters of the model
 
-    Returns:
-        a $(2,q,k)$-array: $dS_{lij} = dS(y_j, \theta_i)/dy_{jl}$
-    """
-    sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-    s, loading = params[0], params[1]
-    dS = np.empty((2, sigmas.size, y.size // 2))
-    # print("dS=", dS)
-    # print(
-    #     "d0_S_fun(y, sigmas, deltas, s, loading)=",
-    #     d0_S_fun(y, sigmas, deltas, s, loading),
-    # )
-    # print(
-    #     "d1_S_fun(y, sigmas, deltas, s, loading)=",
-    #     d1_S_fun(y, sigmas, deltas, s, loading),
-    # )
-    dS[0, :, :] = d0_S_fun(y, sigmas, deltas, s, loading)
-    dS[1, :, :] = d1_S_fun(y, sigmas, deltas, s, loading)
-    # print("dS=", dS)
-    return dS
+#     Returns:
+#         a $(2,q,k)$-array: $dS_{lij} = dS(y_j, \theta_i)/dy_{jl}$
+#     """
+#     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
+#     s, loading = params[0], params[1]
+#     dS = np.empty((2, sigmas.size, y.size // 2))
+#     # print("dS=", dS)
+#     # print(
+#     #     "d0_S_fun(y, sigmas, deltas, s, loading)=",
+#     #     d0_S_fun(y, sigmas, deltas, s, loading),
+#     # )
+#     # print(
+#     #     "d1_S_fun(y, sigmas, deltas, s, loading)=",
+#     #     d1_S_fun(y, sigmas, deltas, s, loading),
+#     # )
+#     dS[0, :, :] = d0_S_fun(y, sigmas, deltas, s, loading)
+#     dS[1, :, :] = d1_S_fun(y, sigmas, deltas, s, loading)
+#     # print("dS=", dS)
+#     return dS
 
 
 def create_initial_contracts(
@@ -256,6 +270,80 @@ def create_initial_contracts(
         y_init = cast(np.ndarray, np.concatenate((yinit_0, yinit_1)))
 
     return y_init, free_y
+
+
+def proximal_operator(
+    z: np.ndarray, theta: np.ndarray, params: np.ndarray, t: float | None = None
+) -> np.ndarray | None:
+    """Proximal operator of -t S_i at z;
+        minimizes $-S_i(y) + 1/(2 t) \\lVert y-z \rVert^2$
+
+    Args:
+        z: an `m`-vector
+        theta: type $i$'s characteristics, a $d$-vector
+        params: the parameters of the model
+        t: the step; if None, we maximize $S_i(y)$
+
+    Returns:
+        the minimizing $y$, an $m$-vector
+    """
+    d = theta.size
+
+    def prox_obj_and_grad(
+        y: np.ndarray, args: list, gr: bool = False
+    ) -> float | tuple[float, np.ndarray]:
+        theta_mat1 = theta.reshape((1, d))
+        S_vals = S_fun(y, theta_mat1, params, gr)
+        if not gr:
+            obj = -S_vals[0, 0]
+            if t is not None:
+                dyz = y - z
+                dist_yz2 = np.sum(dyz * dyz)
+                obj += dist_yz2 / (2 * t)
+            return cast(float, obj)
+        if gr:
+            obj, grad = -S_vals[0][0, 0], -S_vals[1][:, 0, 0]
+            # print(f"{y=}")
+            # print(f"{theta_mat1=}")
+            # print(f"{S_deriv(y, theta_mat1, params).shape=}")
+            # grad = -dS_fun(y, theta_mat1, params)[:, 0, 0]
+            # print(f"{grad=}")
+            if t is not None:
+                dyz = y - z
+                dist_yz2 = np.sum(dyz * dyz)
+                obj += dist_yz2 / (2 * t)
+                grad += dyz / t
+            return cast(float, obj), cast(np.ndarray, grad)
+
+    def prox_obj(y: np.ndarray, args: list) -> float:
+        return cast(float, prox_obj_and_grad(y, args, gr=False))
+
+    def prox_grad(y: np.ndarray, args: list) -> np.ndarray:
+        return cast(tuple[float, np.ndarray], prox_obj_and_grad(y, args, gr=True))[1]
+
+    if t is None:
+        # reasonable initial value for a first-best contract
+        y_init = np.array([1.0, 0.2])
+    else:
+        y_init = z
+
+    # check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
+    # bs_error_abort("done")
+
+    mini = minimize_free(
+        prox_obj,
+        prox_grad,
+        x_init=y_init,
+        args=[],
+    )
+
+    if mini.success or mini.status == 2:
+        y = mini.x
+        return cast(np.ndarray, y)
+    else:
+        print(f"{mini.message}")
+        bs_error_abort(f"Minimization did not converge: status {mini.status}")
+        return None
 
 
 def additional_results(

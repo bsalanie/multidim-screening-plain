@@ -30,10 +30,9 @@ if __name__ == "__main__":
 
     do_first_best = False
     do_solve = True
-    do_plots = True
-
     start_from_first_best = False
     start_from_current = not start_from_first_best
+    do_plots = True
 
     FB_y = np.empty((model.N, model.m))
     if do_first_best:
@@ -56,7 +55,7 @@ if __name__ == "__main__":
             model,
             warmstart=True,
             scale=True,
-            it_max=100_000,
+            it_max=10_000,
             stepratio=1.0,
             tol_primal=1e-5,
             tol_dual=1e-5,

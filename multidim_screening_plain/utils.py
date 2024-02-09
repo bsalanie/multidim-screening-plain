@@ -78,11 +78,6 @@ def print_matrix(matrix: np.ndarray) -> None:
     print("\n")
 
 
-def bs_norm_pdf(x: np.ndarray) -> np.ndarray:
-    """normal PDF."""
-    return cast(np.ndarray, INV_SQRT_2PI * np.exp(-0.5 * x * x))
-
-
 def bs_norm_cdf(x: np.ndarray) -> np.ndarray:
     """Fast standard normal CDF based on Numerical Recipes.
 
@@ -99,9 +94,37 @@ def bs_norm_cdf(x: np.ndarray) -> np.ndarray:
     sign_z = np.sign(z)
     abs_z = np.abs(z)
     t = 1.0 / (1.0 + p * abs_z)
-    y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * np.exp(-z * z)
+    poly_t = ((((a5 * t + a4) * t) + a3) * t + a2) * t + a1
+    y = 1.0 - poly_t * t * np.exp(-z * z)
 
     return cast(np.ndarray, (1.0 + sign_z * y) / 2.0)
+
+
+def bs_norm_pdf(x: np.ndarray) -> np.ndarray:
+    """normal PDF."""
+    # return cast(np.ndarray, INV_SQRT_2PI * np.exp(-0.5 * x * x))
+    """Fast standard normal PDF, the derivative of `bs_norm_cdf`.
+
+    This function is accurate to 6 decimal places.
+    """
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    z = x * INV_SQRT_2
+    sign_z = np.sign(z)
+    abs_z = np.abs(z)
+    t = 1.0 / (1.0 + p * abs_z)
+    dt_dz = -t * t * p * sign_z
+    poly_t = ((((a5 * t + a4) * t) + a3) * t + a2) * t + a1
+    1.0 - poly_t * t * np.exp(-z * z)
+    dpoly_t = ((4.0 * a5 * t + 3.0 * a4) * t + 2.0 * a3) * t + a2
+    dy_dz = -((poly_t + t * dpoly_t) * dt_dz - 2.0 * z * poly_t * t) * np.exp(-z * z)
+
+    return cast(np.ndarray, sign_z * dy_dz * INV_SQRT_2 / 2.0)
 
 
 def contracts_vector(y_mat: np.ndarray) -> np.ndarray:

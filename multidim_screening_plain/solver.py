@@ -9,12 +9,15 @@ from typing import Any, cast
 import numpy as np
 import pandas as pd
 import scipy.sparse as sparse
-from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsnputils import ThreeArrays, npmaxabs
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.specif import S_deriv, S_function, b_deriv, b_function
+from multidim_screening_plain.specif import (
+    S_function,
+    b_function,
+    proximal_operator_surplus,
+)
 from multidim_screening_plain.utils import (
     L2_norm,
     contracts_matrix,
@@ -70,75 +73,12 @@ def JLambda(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray) -> np.ndar
     """
     N, m = theta_mat.shape
     # we compute the (N, N) matrices db_i/dy_0(y_j) and db_i/dy_1(y_j)
-    db_vals = b_deriv(y, theta_mat, params)
+    _, db_vals = b_function(y, theta_mat, params, gr=True)
     J = np.zeros((2, N, N))
     for i in range(m):
         db_vals_i = db_vals[i, :, :]
         J[i, :, :] = db_vals_i - np.diag(db_vals_i)
     return J
-
-
-def proximal_operator_surplus(
-    z: np.ndarray, theta: np.ndarray, params: np.ndarray, t: float | None = None
-) -> np.ndarray | None:
-    """Proximal operator of -t S_i at z;
-        minimizes $-S_i(y) + 1/(2 t) \\lVert y-z \rVert^2$
-
-    Args:
-        z: an `m`-vector
-        theta: type $i$'s characteristics, a $d$-vector
-        params: the parameters of the model
-        t: the step; if None, we maximize $S_i(y)$
-
-    Returns:
-        the minimizing $y$, an $m$-vector
-    """
-    d = theta.size
-
-    def prox_obj_and_grad(
-        y: np.ndarray, args: list, gr: bool = False
-    ) -> float | tuple[float, np.ndarray]:
-        y = y
-        dyz = y - z
-        theta_mat1 = theta.reshape((1, d))
-        obj = -S_function(y, theta_mat1, params)[0, 0]
-        # print(f"{obj=}")
-        if t is not None:
-            dist_yz2 = np.sum(dyz * dyz)
-            obj += dist_yz2 / (2 * t)
-        if gr:
-            # print(f"{y=}")
-            # print(f"{theta_mat1=}")
-            # print(f"{S_deriv(y, theta_mat1, params).shape=}")
-            grad = -S_deriv(y, theta_mat1, params)[:, 0, 0]
-            # print(f"{grad=}")
-            if t is not None:
-                grad += (y - z) / t
-            return obj, grad
-        return cast(float, obj)
-
-    def prox_obj(y: np.ndarray, args: list) -> float:
-        return cast(float, prox_obj_and_grad(y, args, gr=False))
-
-    def prox_grad(y: np.ndarray, args: list) -> np.ndarray:
-        return cast(tuple[float, np.ndarray], prox_obj_and_grad(y, args, gr=True))[1]
-
-    # check_gradient_scalar_function(prox_obj_and_grad, z, args=[])
-
-    mini = minimize_free(
-        prox_obj,
-        prox_grad,
-        x_init=z,
-        args=[],
-    )
-
-    if mini.success:
-        y = mini.x
-        return cast(np.ndarray, y)
-    else:
-        print(f"{mini.message}")
-        bs_error_abort(f"Minimization did not converge: status {mini.status}")
-        return None
 
 
 def get_first_best(model: ScreeningModel) -> np.ndarray:
@@ -155,7 +95,7 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
     N, m = model.N, model.m
     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
 
-    z = np.zeros(m)  # it does not matter
+    z = np.zeros(m)  # it does not matter in the first-best
     y_first = np.empty((N, m))
     for i in range(N):
         sigma, delta = sigmas[i], deltas[i]
@@ -163,7 +103,7 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
         y_first[i, :] = proximal_operator_surplus(z, theta_mat1, params)
         if i % 10 == 0:
             print(f" Done {i=} types out of {N}")
-            print(f"\ni={i}, sigma={sigma}, delta={delta}:")
+            print(f"\ni={i}, sigma={sigma: >8.3f}, delta={delta: >8.3f}:")
             print("\t\t first-best contract:")
             print_row(y_first, i)
 
@@ -573,7 +513,7 @@ def compute_utilities(
     y_first = contracts_vector(y_first_best)
     S_first = np.diag(S_function(y_first, theta_mat, params))
     y_second_best = results.SB_y
-    N, m = y_second_best.shape
+    N = y_second_best.shape[0]
     y_second = contracts_vector(y_second_best)
     Lambda_vals = nlLambda(y_second, theta_mat, params).reshape((N, N))
     S_second = np.diag(S_function(y_second, theta_mat, params))
