@@ -1,0 +1,5 @@
+N = 64, tau = 1.95e-02, sig = 1.95e-02, step ratio = 1.0, primal tol = 1.13e-04, dual tol = 6.40e-04
+s = 4.0, loading = 0.25
+convergence = False, iterations = 10000, elapsed time = 0:13:29.697293
+primal residual = 1.07e+00 tol,  dual residual = 4.97e+01 tol
+

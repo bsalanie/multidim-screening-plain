@@ -122,29 +122,6 @@ def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = F
         return diff_logs / sigmas.reshape((-1, 1)), grad
 
 
-# def db_fun(y, theta_mat, params):
-#     """calculates both derivatives of the coverage
-
-#     Args:
-#         y:  a $2 k$-vector of $k$ contracts
-#         theta_mat: a $(q,2)$-vector of characteristics of types
-#         params: the parameters of the model
-
-#     Returns:
-#         a $(2,q,k)$-array:  $db_{lij} = db(y_j, \theta_i)/dy_{jl}$
-#     """
-#     y_0, _ = split_y(y)
-#     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-#     s = params[0]
-#     denom_inv = 1.0 / multiply_each_col(val_I(y, sigmas, deltas, s), sigmas)
-#     derivatives_b = np.empty((2, sigmas.size, y_0.size))
-#     derivatives_b[0, :, :] = (
-#         -(d0_val_B(y, sigmas, deltas, s) + d0_val_C(y, sigmas, deltas, s)) * denom_inv
-#     )
-#     derivatives_b[1, :, :] = -d1_val_C(y, sigmas, deltas, s) * denom_inv
-#     return derivatives_b
-
-
 def S_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
     """evaluates the joint surplus, and maybe its gradient
 
@@ -174,35 +151,6 @@ def S_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = F
         grad_S[0, :, :] -= penalties[1][0, :]
         grad_S[1, :, :] -= penalties[1][1, :]
         return val_S, grad_S
-
-
-# def dS_fun(y, theta_mat, params):
-#     """calculates both derivatives of the surplus
-
-#     Args:
-#         y:  a $2 k$-vector of $k$ contracts
-#         theta_mat: a $(q,2)$-vector of characteristics of types
-#         params: the parameters of the model
-
-#     Returns:
-#         a $(2,q,k)$-array: $dS_{lij} = dS(y_j, \theta_i)/dy_{jl}$
-#     """
-#     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-#     s, loading = params[0], params[1]
-#     dS = np.empty((2, sigmas.size, y.size // 2))
-#     # print("dS=", dS)
-#     # print(
-#     #     "d0_S_fun(y, sigmas, deltas, s, loading)=",
-#     #     d0_S_fun(y, sigmas, deltas, s, loading),
-#     # )
-#     # print(
-#     #     "d1_S_fun(y, sigmas, deltas, s, loading)=",
-#     #     d1_S_fun(y, sigmas, deltas, s, loading),
-#     # )
-#     dS[0, :, :] = d0_S_fun(y, sigmas, deltas, s, loading)
-#     dS[1, :, :] = d1_S_fun(y, sigmas, deltas, s, loading)
-#     # print("dS=", dS)
-#     return dS
 
 
 def create_initial_contracts(
@@ -303,11 +251,6 @@ def proximal_operator(
             return cast(float, obj)
         if gr:
             obj, grad = -S_vals[0][0, 0], -S_vals[1][:, 0, 0]
-            # print(f"{y=}")
-            # print(f"{theta_mat1=}")
-            # print(f"{S_deriv(y, theta_mat1, params).shape=}")
-            # grad = -dS_fun(y, theta_mat1, params)[:, 0, 0]
-            # print(f"{grad=}")
             if t is not None:
                 dyz = y - z
                 dist_yz2 = np.sum(dyz * dyz)
@@ -414,20 +357,6 @@ def plot_results(model: ScreeningModel) -> None:
 
     # first plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
-
-    # y_second_best = results.SB_y.round(3)
-
-    # ## put FB and SB together
-    # df_first = df_first_best[["Risk-aversion", "Risk location", "Deductible", "Copay"]]
-    # df_first["Model"] = "First-best"
-    # df_second = pd.DataFrame(
-    #     {
-    #         "Deductible": y_second_best[:, 0],
-    #         "Copay": y_second_best[:, 1],
-    #     }
-    # )
-    # df_second["Model"] = "Second-best"
-    # df_first_and_second = pd.concat((df_first, df_second), axis=1)
 
     display_variable(
         df_all_results,

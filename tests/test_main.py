@@ -175,16 +175,3 @@ def test_dS():
 
     anal, num = check_gradient_scalar_function(SdS, y, args=[])
     assert np.allclose(anal, num, rtol=1e-5, atol=1e-5)
-
-
-# def test_d0_val_BC():
-#     y = np.array([0.3, 0.2])
-#     theta_mat1 = np.array([[0.5, -6.0]])
-#     sigmas = np.array([theta_mat1[0, 0]])
-#     deltas = np.array([theta_mat1[0, 1]])
-#     params = np.array([4.0, 0.25])
-#     s = params[0]
-#     d0_B = d0_val_B(y, sigmas, deltas, s)[0, 0]
-#     d0_C = d0_val_C(y, sigmas, deltas, s)[0, 0]
-#     d0_BC = d0_val_BC(y, sigmas, deltas, s)[0, 0]
-#     assert np.allclose(d0_BC, d0_B + d0_C)
