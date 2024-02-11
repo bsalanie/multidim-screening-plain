@@ -1,0 +1,10 @@
+N = 25, tau = 4.47e-02, sig = 4.47e-02, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 21565, elapsed time = 0:08:53.193991
+primal residual = 6.42e-02 tol,  dual residual = 1.00e+00 tol
+
+N = 25, tau = 4.47e-02, sig = 4.47e-02, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 24217, elapsed time = 0:10:00.919495
+primal residual = 3.29e-02 tol,  dual residual = 1.00e+00 tol
+

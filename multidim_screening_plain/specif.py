@@ -1,7 +1,7 @@
-"""This is an interface module. The user should specify the `model_name`; 
+"""This is an interface module. The user should specify the `model_name`;
 and, in a module `model_name.py`, the model-dependent functions and parameters:
 - `create_model`: creates the `ScreeningModel`
-- `create_initial_contracts`: initial values for the contracts, and chooses the 
+- `create_initial_contracts`: initial values for the contracts, and chooses the
 types for whom we optimize contracts
 - `b_fun`: computes $b_i(y_j)$ for types $i$ and  contracts $y_j$
 - `db_fun`: its derivatives wrt to all dimensions of the contracts
@@ -13,25 +13,122 @@ types for whom we optimize contracts
 
 We use `importlib` to import the model-dependent module.
 """
+
 import importlib
-from typing import Any, cast
+from typing import cast
 
 import numpy as np
+from bs_python_utils.bsutils import bs_error_abort, mkdir_if_needed, print_stars
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-
-# ONLY CHANGE THIS LINE: PROVIDE THE NAME OF THE MODEL
-model_name = "insurance_d2_m2"
-
-# DO NOT CHANGE BELOW THIS LINE
-model_module = importlib.import_module(
-    f".{model_name}", package="multidim_screening_plain"
+from multidim_screening_plain.utils import (
+    make_grid,
+    parse_string,
+    plots_dir,
+    results_dir,
 )
 
 
-def setup_model(model_name: str) -> ScreeningModel:
-    screening_model = model_module.create_model(model_name)
-    return cast(ScreeningModel, screening_model)
+def setup_model(model_config: dict) -> ScreeningModel:
+    """initializes the `ScreeningModel` object:
+    fills in the dimensions, the numbers in each type, the characteristics of the types,
+    the model parameters, and the directories.
+
+    Args:
+        model_config: the dictionary read from 'config.env'
+
+    Returns:
+        the `ScreeningModel` object
+    """
+    model_name = cast(str, model_config["MODEL_NAME"])
+    print_stars(f"Running model {model_name}")
+
+    # first we deal with the types
+    d = int(cast(str, model_config["DIMENSION_TYPES"]))
+    type_names = parse_string(
+        cast(str, model_config["TYPES_NAMES"]), d, ",", "type names", "str"
+    )
+    str_dims_grid = cast(str, model_config["TYPES_GRID_SIZE"])
+    dims_grid = parse_string(str_dims_grid, d, "x", "types", "int")
+    N = np.prod(dims_grid)  # number of types
+    # the grid of types
+    str_grid_mins = cast(str, model_config["TYPES_MINIMA"])
+    grid_mins = parse_string(str_grid_mins, d, ",", "minima of types", "float")
+    str_grid_maxs = cast(str, model_config["TYPES_MAXIMA"])
+    grid_maxs = parse_string(str_grid_maxs, d, ",", "maxima of types", "float")
+    theta: list[np.ndarray] = [np.zeros(1)] * d
+    type_distrib = cast(str, model_config["TYPES_DISTRIBUTION"])
+    if type_distrib == "uniform":
+        f = np.ones(N)  # weights of distribution
+        for j in range(d):
+            if grid_mins[j] >= grid_maxs[j]:
+                bs_error_abort(
+                    f"Wrong bounds for the types: {grid_mins[j]} >= {grid_maxs[j]}"
+                )
+            else:
+                print(
+                    f"Dimension {j+1} of the types: from {grid_mins[j]} to"
+                    f" {grid_maxs[j]}"
+                )
+                theta[j] = np.linspace(grid_mins[j], grid_maxs[j], num=dims_grid[j])
+    else:
+        bs_error_abort(
+            f"Unknown distribution of types: {type_distrib}; only uniform is"
+            " implemented."
+        )
+    theta_mat = make_grid(theta)  # an (N,d) matrix
+
+    # dimension of contracts
+    m = int(cast(str, model_config["NUMBER_CONTRACT_VARIABLES"]))
+    contract_varnames = parse_string(
+        cast(str, model_config["CONTRACT_VARIABLE_NAMES"]),
+        m,
+        ",",
+        "contract variable names",
+        "str",
+    )
+
+    suffix = ""
+    case = f"N{N}{suffix}"
+    model_id = f"{model_name}_{case}"
+    resdir = mkdir_if_needed(results_dir / model_id)
+    plotdir = mkdir_if_needed(plots_dir / model_id)
+
+    # model parameters
+    n_params = int(cast(str, model_config["NUMBER_PARAMETERS"]))
+    params = parse_string(
+        cast(str, model_config["PARAMETERS"]),
+        n_params,
+        ",",
+        "parameters",
+        "float",
+    )
+    params_names = parse_string(
+        cast(str, model_config["PARAMETER_NAMES"]),
+        n_params,
+        ",",
+        "parameter names",
+        "str",
+    )
+    model_module = importlib.import_module(
+        f".{model_name}", package="multidim_screening_plain"
+    )
+    return ScreeningModel(
+        f=f,
+        model_id=model_id,
+        theta_mat=theta_mat,
+        type_names=type_names.tolist(),
+        contract_varnames=contract_varnames.tolist(),
+        params=params,
+        params_names=params_names.tolist(),
+        m=m,
+        resdir=resdir,
+        plotdir=plotdir,
+        model_module=model_module,
+        proximal_operator_surplus=model_module.proximal_operator,
+        b_function=model_module.b_fun,
+        S_function=model_module.S_fun,
+    )
 
 
 def initialize_contracts(
@@ -52,90 +149,10 @@ def initialize_contracts(
     """
     return cast(
         tuple[np.ndarray, list],
-        model_module.create_initial_contracts(
+        model.model_module.create_initial_contracts(
             model, start_from_first_best, y_first_best_mat
         ),
     )
-
-
-def b_function(
-    y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False
-) -> Any:
-    """The b function
-
-    Args:
-        y: an $m k$-vector of $k$ contracts
-        theta_mat: a $(q,d)$-vector of characteristics of types
-        params: the parameters of the model
-        gr: whether we compute the gradient
-
-    Returns:
-        a $(q,k)$-matrix, and a $(m,q,k)$ array if `gr` is `True`
-    """
-    return model_module.b_fun(y, theta_mat, params, gr)
-
-
-# def b_deriv(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray) -> Any:
-#     """The derivatives of the b function
-
-#     Args:
-#         y: an $m k$-vector of $k$ contracts
-#         theta_mat: a $(q,d)$-vector of characteristics of types
-#         params: the parameters of the model
-
-#     Returns:
-#         an $(m,q,k)$-array
-#     """
-#     return model_module.db_fun(y, theta_mat, params)
-
-
-def S_function(
-    y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False
-) -> Any:
-    """The S function and maybe its gradient
-
-    Args:
-        y: an $m k$-vector of $k$ contracts
-        theta_mat: a $(q,d)$-vector of characteristics of types
-        params: the parameters of the model
-        gr: whether we compute the gradient
-
-    Returns:
-        a $(q,k)$-matrix, and a $(m,q,k)$ array if `gr` is `True`
-    """
-    return model_module.S_fun(y, theta_mat, params, gr)
-
-
-# def S_deriv(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray) -> Any:
-#     """The derivatives of the S function
-
-#     Args:
-#         y:  an $m k$-vector of $k$ contracts
-#         theta_mat: a $(q,d)$-vector of characteristics of types
-#         params: the parameters of the model
-
-#     Returns:
-#         an $(m,q,k)$-array
-#     """
-#     return model_module.dS_fun(y, theta_mat, params)
-
-
-def proximal_operator_surplus(
-    z: np.ndarray, theta: np.ndarray, params: np.ndarray, t: float | None = None
-) -> np.ndarray | None:
-    """Proximal operator of -t S_i at z;
-        minimizes $-S_i(y) + 1/(2 t) \\lVert y-z \rVert^2$
-
-    Args:
-        z: an `m`-vector
-        theta: type $i$'s characteristics, a $d$-vector
-        params: the parameters of the model
-        t: the step; if None, we maximize $S_i(y)$
-
-    Returns:
-        the minimizing $y$, an $m$-vector
-    """
-    return model_module.proximal_operator(z, theta, params, t)
 
 
 def add_results(
@@ -146,7 +163,8 @@ def add_results(
     Args:
         results: the results
     """
-    return cast(None, model_module.additional_results(results))
+    model = results.model
+    model.model_module.additional_results(results)
 
 
 def plot(model: ScreeningModel) -> None:
@@ -155,4 +173,4 @@ def plot(model: ScreeningModel) -> None:
     Args:
         results: the results
     """
-    model_module.plot_results(model)
+    model.model_module.plot_results(model)

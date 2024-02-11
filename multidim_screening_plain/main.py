@@ -7,7 +7,7 @@ from typing import cast
 
 import numpy as np
 import pandas as pd
-from bs_python_utils.bsutils import print_stars
+from dotenv import dotenv_values
 
 from multidim_screening_plain.solver import (
     JLambda,
@@ -18,21 +18,22 @@ from multidim_screening_plain.solver import (
 from multidim_screening_plain.specif import (
     add_results,
     initialize_contracts,
-    model_name,
     plot,
     setup_model,
 )
 
 if __name__ == "__main__":
-    print_stars(f"Running model {model_name}")
+    # load configuration
+    config = dotenv_values(Path.cwd() / "multidim_screening_plain" / "config.env")
+    model = setup_model(config)
 
-    model = setup_model(model_name)
+    print(model)
 
-    do_first_best = False
-    do_solve = True
-    start_from_first_best = False
+    do_first_best = config["DO_FIRST_BEST"] == "True"
+    do_solve = config["DO_SOLVE"] == "True"
+    start_from_first_best = config["START_FROM_FIRST_BEST"] == "True"
     start_from_current = not start_from_first_best
-    do_plots = True
+    do_plots = config["DO_PLOTS"] == "True"
 
     FB_y = np.empty((model.N, model.m))
     if do_first_best:
@@ -48,18 +49,21 @@ if __name__ == "__main__":
     if do_solve:  # we solve for the second best
         # initial values
         y_init, free_y = initialize_contracts(model, start_from_first_best, FB_y)
-        JLy = JLambda(y_init, model.theta_mat, model.params)
+        JLy = JLambda(model, y_init, model.theta_mat, model.params)
         model.initialize(y_init, free_y, JLy)
+
+        it_max = int(cast(str, config["MAX_ITERATIONS"]))
+        tol = float(cast(str, config["TOLERANCE"]))
 
         results = solve(
             model,
             warmstart=True,
             scale=True,
-            it_max=10_000,
+            it_max=it_max,
             stepratio=1.0,
-            tol_primal=1e-5,
-            tol_dual=1e-5,
-            fix_top=True,
+            tol_primal=tol,
+            tol_dual=tol,
+            fix_top=config["FIX_TOP"] == "True",
         )
 
         S_first, U_second, S_second = compute_utilities(results)

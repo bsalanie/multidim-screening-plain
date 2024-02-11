@@ -1,5 +1,7 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 from typing import cast
 
 import numpy as np
@@ -17,12 +19,18 @@ class ScreeningModel:
 
     f: np.ndarray  # the numbers of individuals in each type
     theta_mat: np.ndarray  # the characteristics of the types
+    type_names: list[str]
+    contract_varnames: list[str]
     params: np.ndarray  # the parameters of the model
     params_names: list
     m: int  # the dimension of the contracts
     model_id: str
     resdir: Path
     plotdir: Path
+    model_module: ModuleType
+    b_function: Callable
+    S_function: Callable
+    proximal_operator_surplus: Callable
 
     N: int = field(init=False)  # the number of types
     d: int = field(init=False)  # their dimension
@@ -58,8 +66,14 @@ class ScreeningModel:
         self.M = 2.0 * (self.N - 1) * mult_fac
 
     def __repr__(self) -> str:
-        clstr = f"\nModel {self.model_id}: {self.N} {self.d}-dimensional types\n"
-        clstr += f" and {self.m}-dimensional contracts\n"
+        clstr = f"\nModel {self.model_id}: {self.N} {self.d}-dimensional types:\n"
+        for j in range(self.d - 1):
+            clstr += f"    {self.type_names[j]} and "
+        clstr += f"    {self.type_names[-1]}\n"
+        clstr += f" and {self.m}-dimensional contracts:\n"
+        for j in range(self.m - 1):
+            clstr += f"    {self.contract_varnames[j]} and "
+        clstr += f"    {self.contract_varnames[-1]}\n"
         clstr += "    the model parameters are:\n"
         for name, par in zip(self.params_names, self.params, strict=True):
             clstr += f"    {name}: {par: > 10.3f}\n"
@@ -181,4 +195,5 @@ class ScreeningResults:
                 clstr += f"{self.SB_y[i, k]: >8.3f} "
             clstr += "\n"
 
+        return clstr + "\n"
         return clstr + "\n"

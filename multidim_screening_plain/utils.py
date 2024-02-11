@@ -6,6 +6,7 @@ import altair as alt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from bs_python_utils.bsutils import bs_error_abort
 
 results_dir = Path.cwd() / "results"
 plots_dir = Path.cwd() / "plots"
@@ -13,6 +14,45 @@ plots_dir = Path.cwd() / "plots"
 
 INV_SQRT_2 = np.sqrt(0.5)
 INV_SQRT_2PI = 1.0 / np.sqrt(2 * np.pi)
+
+
+def parse_string(s: str, d: int, ch: str, msg: str, component_type: str) -> np.ndarray:
+    bits = s.split(ch)
+    if component_type == "int":
+        components = np.array([int(b) for b in bits])
+    elif component_type == "float":
+        components = np.array([float(b) for b in bits])
+    elif component_type == "str":
+        components = np.array(bits)
+    else:
+        bs_error_abort(f"Unknown component type {component_type}")
+    if components.size != d:
+        bs_error_abort(
+            f"Wrong number of dimensions for {msg}: {components.size} but we want"
+            f" {d} dimensions."
+        )
+    return cast(np.ndarray, components)
+
+
+def make_grid(theta: list[np.ndarray]) -> np.ndarray:
+    """
+    creates the $d$-dimensional grid of types
+
+    Args:
+        theta: a list of $d$ arrays
+
+    Returns:
+        an $(N,d)$-matrix, the grid of types
+    """
+    ltheta = np.meshgrid(*theta)
+    d = len(ltheta)
+    for j in range(d):
+        ltheta[j] = ltheta[j].flatten()
+    N = ltheta[0].size
+    theta_mat = np.zeros((N, d))
+    for j in range(d):
+        theta_mat[:, j] = ltheta[j]
+    return theta_mat
 
 
 def add_to_each_col(mat: np.ndarray, vec: np.ndarray) -> np.ndarray:

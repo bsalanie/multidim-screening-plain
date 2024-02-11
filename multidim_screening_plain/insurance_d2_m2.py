@@ -4,7 +4,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 from bs_python_utils.bs_opt import minimize_free
-from bs_python_utils.bsutils import bs_error_abort, mkdir_if_needed
+from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.insurance_d2_m2_plots import (
@@ -27,67 +27,7 @@ from multidim_screening_plain.insurance_d2_m2_values import (
     val_D,
     val_I,
 )
-from multidim_screening_plain.utils import (
-    contracts_vector,
-    plots_dir,
-    results_dir,
-)
-
-
-def create_model(model_name: str) -> ScreeningModel:
-    """initializes the ScreeningModel object:
-    fills in the dimensions, the numbers in each type, the characteristics of the types,
-    the model parameters, and the directories.
-
-    Args:
-        model_name: the name of the model
-
-    Returns:
-        the ScreeningModel object
-    """
-    # size of grid for types in each dimension
-    n0 = n1 = 8
-    N = n0 * n1
-
-    # dimension of contracts
-    m = 2
-
-    suffix = ""
-    case = f"N{N}{suffix}"
-    model_id = f"{model_name}_{case}"
-    resdir = mkdir_if_needed(results_dir / model_id)
-    plotdir = mkdir_if_needed(plots_dir / model_id)
-
-    sigma_min = 0.2
-    sigma_max = 0.5
-    delta_min = -7.0
-    delta_max = -3.0
-    # risk-aversions and risk location parameter (unit=1,000 euros)
-    sigmas, deltas = np.linspace(sigma_min, sigma_max, num=n0), np.linspace(
-        delta_min, delta_max, num=n1
-    )
-    theta0, theta1 = np.meshgrid(sigmas, deltas)
-    theta_mat = np.column_stack(
-        (theta0.flatten(), theta1.flatten())
-    )  # is a N x 2 matrix
-
-    f = np.ones(N)  # weights of distribution
-
-    # model parameters setting
-    s = 4.0  # dispersion of individual losses
-    loading = 0.25  # loading factor
-    params = np.array([s, loading])
-
-    return ScreeningModel(
-        f=f,
-        model_id=model_id,
-        theta_mat=theta_mat,
-        params=params,
-        params_names=["s", "loading"],
-        m=m,
-        resdir=resdir,
-        plotdir=plotdir,
-    )
+from multidim_screening_plain.utils import contracts_vector
 
 
 def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
@@ -173,7 +113,7 @@ def create_initial_contracts(
     if start_from_first_best:
         if y_first_best_mat is None:
             bs_error_abort("We start from the first best but y_first_best_mat is None")
-        y_init = contracts_vector(y_first_best_mat)
+        y_init = contracts_vector(cast(np.ndarray, y_first_best_mat))
         set_fixed_y: set[int] = set()
         set_not_insured: set[int] = set()
         free_y = list(range(N))
@@ -264,11 +204,7 @@ def proximal_operator(
     def prox_grad(y: np.ndarray, args: list) -> np.ndarray:
         return cast(tuple[float, np.ndarray], prox_obj_and_grad(y, args, gr=True))[1]
 
-    if t is None:
-        # reasonable initial value for a first-best contract
-        y_init = np.array([1.0, 0.2])
-    else:
-        y_init = z
+    y_init = np.array([1.0, 0.2]) if t is None else z
 
     # check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
     # bs_error_abort("done")
