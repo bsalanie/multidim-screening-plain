@@ -1,0 +1,5 @@
+N = 9, tau = 1.03e-01, sig = 1.03e-01, step ratio = 1.0, primal tol = 4.24e-05, dual tol = 9.00e-05
+s = 4.0, loading = 0.25
+convergence = True, iterations = 2533, elapsed time = 0:00:19.127173
+primal residual = 1.00e+00 tol,  dual residual = 1.28e-03 tol
+

@@ -1,8 +1,10 @@
 """Algorithm for multidimensional screening"""
 
+import multiprocessing as mp
 from datetime import timedelta
 from math import sqrt
 from pathlib import Path
+from time import perf_counter
 from timeit import default_timer as timer
 from typing import Any, cast
 
@@ -179,12 +181,41 @@ def nlLambda(
     return db
 
 
+def prox_work_func_mp(model: ScreeningModel, list_working: list) -> list:
+    prox_operator = model.proximal_operator_surplus
+    len(list_working)
+    n_procs = mp.cpu_count() - 2
+    chunksize = 10  # 1 + n_working // n_procs
+    print(f"\n using {n_procs=} and {chunksize=}")
+
+    # chunksize, leftover = divmod(n_working, n_procs)
+    # for i in range(n_procs-1):
+    #     i0 = i * chunksize
+    #     i1 = (i + 1) * chunksize
+    #     list_working_i = list_working[i0:i1]
+    #     p = mp.Process(target=prox_operator, args=(list_working_i,))
+    #     res[i0:i1] = p.run()
+    # list_working_i += list_working[i1:]
+    # p = mp.Process(target=prox_operator, args=(list_working_i,))
+    # res[i1:] = p.run()
+
+    with mp.Pool(processes=n_procs) as pool:
+        res = pool.starmap(prox_operator, list_working, chunksize=chunksize)
+
+    # res: list = [None] * n_working
+    # for i in range(n_working):
+    #     arg_i = list_working[i]
+    #     res[i] = prox_operator(*arg_i)
+    return res
+
+
 def prox_work_func(model: ScreeningModel, list_working: list) -> list:
+    prox_operator = model.proximal_operator_surplus
     n_working = len(list_working)
     res: list = [None] * n_working
     for i in range(n_working):
         arg_i = list_working[i]
-        res[i] = model.proximal_operator_surplus(*arg_i)
+        res[i] = prox_operator(*arg_i)
     return res
 
 
@@ -215,31 +246,30 @@ def prox_minusS(
     params = model.params
     f = model.f
 
-    list_args = [
+    # these are the types we will be working with
+    Nmax = N - 1 if fix_top else N
+    working_i0 = [i for i in free_y if i < Nmax] if free_y else list(range(Nmax))
+
+    list_working = [
         [
             np.array([z[k * N + i] for k in range(m)]),
             theta_mat[i, :],
             params,
             tau * f[i],
         ]
-        for i in range(N)
+        for i in working_i0
     ]
-
-    # these are the types we will be working with
-    Nmax = N - 1 if fix_top else N
-    working_i0 = [i for i in free_y if i < Nmax] if free_y else list(range(Nmax))
-
-    list_working = [list_args[i] for i in working_i0]
     n_working = len(list_working)
-
-    # print(f"{working_i0=}")
 
     y = y_current
     if fix_top:
         # we fix the second-best at the first-best at the top
         for k in range(m):
             y[k * N + N - 1] = model.FB_y[-1, k]
+    start_prox = perf_counter()
     res = prox_work_func(model, list_working)
+    end_prox = perf_counter()
+    print(f"\n the proximal operator took {end_prox - start_prox: > 10.5f} seconds")
     for i in range(n_working):
         res_i = res[i]
         i_working = working_i0[i]
