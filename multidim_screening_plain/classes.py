@@ -40,6 +40,7 @@ class ScreeningModel:
     norm_Lambda: float = field(init=False)
     M: float = field(init=False)
     FB_y: np.ndarray = field(init=False)
+    precalculated_values: dict = field(init=False)
 
     def __post_init__(self):
         self.N, self.d = check_matrix(self.theta_mat)
@@ -64,6 +65,10 @@ class ScreeningModel:
 
     def rescale_step(self, mult_fac: float) -> None:
         self.M = 2.0 * (self.N - 1) * mult_fac
+
+    def precalculate(self) -> dict:
+        self.precalculated_values = self.model_module.precalculate_values()
+        return self.precalculated_values
 
     def __repr__(self) -> str:
         clstr = f"\nModel {self.model_id}: {self.N} {self.d}-dimensional types:\n"

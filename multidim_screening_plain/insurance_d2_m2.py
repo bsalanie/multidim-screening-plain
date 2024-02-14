@@ -8,26 +8,36 @@ from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.insurance_d2_m2_plots import (
-    display_variable,
     plot_best_contracts,
     plot_calibration,
-    plot_constraints,
     plot_contract_models,
     plot_contract_riskavs,
     plot_copays,
     plot_second_best_contracts,
     plot_utilities,
-    plot_y_range,
 )
 from multidim_screening_plain.insurance_d2_m2_values import (
     S_penalties,
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
+    val_A,
     val_D,
     val_I,
 )
-from multidim_screening_plain.utils import contracts_vector
+from multidim_screening_plain.utils import (
+    contracts_vector,
+    display_variable,
+    plot_constraints,
+    plot_y_range,
+)
+
+
+def precalculate_values(model: ScreeningModel) -> dict:
+    deltas = model.theta_mat[:, 1]
+    s = model.params[0]
+    values_A = val_A(deltas, s)
+    return {"values_A": values_A}
 
 
 def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
@@ -176,11 +186,11 @@ def proximal_operator(
         the minimizing $y$, an $m$-vector
     """
     d = theta.size
+    theta_mat1 = theta.reshape((1, d))
 
     def prox_obj_and_grad(
         y: np.ndarray, args: list, gr: bool = False
     ) -> float | tuple[float, np.ndarray]:
-        theta_mat1 = theta.reshape((1, d))
         S_vals = S_fun(y, theta_mat1, params, gr)
         if not gr:
             obj = -S_vals[0, 0]

@@ -154,6 +154,30 @@ def val_I(
         return val + value_A.reshape((-1, 1)), grad
 
 
+def val_I_N(
+    y: np.ndarray, sigmas: np.ndarray, deltas: np.ndarray, s: float, gr: bool = False
+) -> Any:
+    """computes the integral $I$ for all values in `y`
+    when `(sigmas, deltas)` are the `N` types
+
+    Args:
+        y:  a $2 k$-vector of $k$ contracts
+        sigmas: an $N$-vector of risk-aversion parameters
+        deltas: an $N$-vector of risk parameters
+        s: the dispersion of losses
+
+    Returns:
+        the value of $I(y,\\sigma,\\delta,s)$ as a $(q, k)$ matrix
+    """
+    value_A = bs_norm_cdf(-deltas / s)
+    value_BC = val_BC(y, sigmas, deltas, s, gr)
+    if not gr:
+        return value_BC + value_A.reshape((-1, 1))
+    else:
+        val, grad = value_BC
+        return val + value_A.reshape((-1, 1)), grad
+
+
 def S_penalties(y: np.ndarray, gr: bool = False) -> Any:
     """penalties to keep minimization of `S` within bounds; with gradient if `gr` is `True`
 
@@ -206,3 +230,12 @@ def expected_positive_loss(deltas, s):
 def cost_non_insur(sigmas, deltas, s):
     y_no_insur = np.array([0.0, 1.0])
     return np.log(val_I(y_no_insur, sigmas, deltas, s))[:, 0] / sigmas
+
+
+def value_deductible(deduc, sigma, delta, s):
+    y = np.array([deduc, 0.0])
+    sigma_vec, delta_vec = np.array([sigma]), np.array([delta])
+    return (
+        cost_non_insur(sigma, delta, s)
+        - np.log(val_I(y, sigma_vec, delta_vec, s))[0, 0] / sigma
+    )

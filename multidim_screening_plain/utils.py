@@ -274,23 +274,27 @@ def set_axis(variable: np.ndarray, margin: float = 0.05) -> tuple[float, float]:
 
 
 def display_variable(
-    variable: np.ndarray,
-    theta_mat: np.ndarray,
+    df_all_results: pd.DataFrame,
+    variable: str,
     title: str | None = None,
     cmap=None,
-    cmap_label: str | None = None,
-    path: Path | None = None,
+    path: str | None = None,
     figsize: tuple[int, int] = (5, 5),
     **kwargs: dict | None,
 ) -> None:
+    theta_mat = df_all_results[["Risk-aversion", "Risk location"]].values
     fig, ax = plt.subplots(
         1, 1, figsize=figsize, subplot_kw=kwargs
     )  # subplot_kw=dict(aspect='equal',)
     _ = ax.set_xlabel(r"Risk-aversion $\sigma$")
     _ = ax.set_ylabel(r"Risk location $\delta$")
     _ = ax.set_title(title)
-    scatter = ax.scatter(theta_mat[:, 0], theta_mat[:, 1], c=variable, cmap=cmap)
-    _ = fig.colorbar(scatter, label=cmap_label)
+    scatter = ax.scatter(
+        theta_mat[:, 0], theta_mat[:, 1], c=df_all_results[variable].values, cmap=cmap
+    )
+    _ = fig.colorbar(scatter, label=variable)
+    if title is not None:
+        _ = ax.set_title(title)
 
     if path is not None:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
@@ -298,10 +302,10 @@ def display_variable(
 
 def plot_y_range(
     df_first_and_second: pd.DataFrame,
-    figsize=(5, 5),
-    s=20,
-    title=None,
-    path=None,
+    figsize: tuple[int, int] = (5, 5),
+    s: int = 20,
+    title: str | None = None,
+    path: str | None = None,
     **kwargs,
 ) -> None:
     """the supposed stingray: the optimal contracts for both first and second best in contract space
@@ -339,7 +343,7 @@ def plot_y_range(
 
 
 def plot_constraints(
-    theta_mat: np.ndarray,
+    df_all_results: pd.DataFrame,
     IR_binds: list,
     IC_binds: list,
     figsize: tuple = (5, 5),
@@ -351,13 +355,14 @@ def plot_constraints(
     """the original scatterplot  of binding constraints.
 
     Args:
-        theta_mat: the `(N,2)` matrix of type values
+        df_all_results: the dataframe of results
         IR_binds: the list of types for which  IR binds
         IC_binds: the list of pairs (i, j) for which i is indifferent between his contract and j's
 
     Returns:
         nothing. Just plots the constraints.
     """
+    theta_mat = df_all_results[["Risk-aversion", "Risk location"]].values.round(2)
     IC = "IC" if title else "IC binding"
     IR = "IR" if title else "IR binding"
     fig, ax = plt.subplots(

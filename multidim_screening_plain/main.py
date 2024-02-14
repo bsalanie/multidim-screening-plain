@@ -26,6 +26,7 @@ if __name__ == "__main__":
     # load configuration
     config = dotenv_values(Path.cwd() / "multidim_screening_plain" / "config.env")
     model = setup_model(config)
+    precalculated = model.precalculate()
 
     print(model)
 

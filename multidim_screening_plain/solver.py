@@ -1,10 +1,9 @@
 """Algorithm for multidimensional screening"""
 
-import multiprocessing as mp
+# import multiprocessing as mp
 from datetime import timedelta
 from math import sqrt
 from pathlib import Path
-from time import perf_counter
 from timeit import default_timer as timer
 from typing import Any, cast
 
@@ -117,18 +116,18 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
     return cast(np.ndarray, y_first)
 
 
-def make_v(w: np.ndarray, beta: np.ndarray) -> np.ndarray:
-    """computes $v_{ij} = \\max(w_{ij}-\beta_i +\beta_j, 0)$
+# def make_v(w: np.ndarray, beta: np.ndarray) -> np.ndarray:
+#     """computes $v_{ij} = \\max(w_{ij}-\beta_i +\beta_j, 0)$
 
-    Args:
-        w: an `(N,N)` matrix
-        beta: an `N`-vector
+#     Args:
+#         w: an `(N,N)` matrix
+#         beta: an `N`-vector
 
-    Returns:
-        v: an `(N,N)` matrix
-    """
-    dbeta = D_mul(beta)
-    return cast(np.ndarray, np.clip(w - dbeta, 0.0, np.inf))
+#     Returns:
+#         v: an `(N,N)` matrix
+#     """
+#     dbeta = D_mul(beta)
+#     return cast(np.ndarray, np.clip(w - dbeta, 0.0, np.inf))
 
 
 def D_mul(v: np.ndarray) -> np.ndarray:
@@ -181,32 +180,35 @@ def nlLambda(
     return db
 
 
-def prox_work_func_mp(model: ScreeningModel, list_working: list) -> list:
-    prox_operator = model.proximal_operator_surplus
-    len(list_working)
-    n_procs = mp.cpu_count() - 2
-    chunksize = 10  # 1 + n_working // n_procs
-    print(f"\n using {n_procs=} and {chunksize=}")
+############ ############ ############ ############ ############ ######
+############  UNSUCCESSFUL ATTEMPT TO USE MULTIPROCESSING  ############
+############ ############ ############ ############ ############ ######
+# def prox_work_func_mp(model: ScreeningModel, list_working: list) -> list:
+#     prox_operator = model.proximal_operator_surplus
+#     len(list_working)
+#     n_procs = mp.cpu_count() - 2
+#     chunksize = 10  # 1 + n_working // n_procs
+#     print(f"\n using {n_procs=} and {chunksize=}")
 
-    # chunksize, leftover = divmod(n_working, n_procs)
-    # for i in range(n_procs-1):
-    #     i0 = i * chunksize
-    #     i1 = (i + 1) * chunksize
-    #     list_working_i = list_working[i0:i1]
-    #     p = mp.Process(target=prox_operator, args=(list_working_i,))
-    #     res[i0:i1] = p.run()
-    # list_working_i += list_working[i1:]
-    # p = mp.Process(target=prox_operator, args=(list_working_i,))
-    # res[i1:] = p.run()
+# chunksize, leftover = divmod(n_working, n_procs)
+# for i in range(n_procs-1):
+#     i0 = i * chunksize
+#     i1 = (i + 1) * chunksize
+#     list_working_i = list_working[i0:i1]
+#     p = mp.Process(target=prox_operator, args=(list_working_i,))
+#     res[i0:i1] = p.run()
+# list_working_i += list_working[i1:]
+# p = mp.Process(target=prox_operator, args=(list_working_i,))
+# res[i1:] = p.run()
 
-    with mp.Pool(processes=n_procs) as pool:
-        res = pool.starmap(prox_operator, list_working, chunksize=chunksize)
+# with mp.Pool(processes=n_procs) as pool:
+#     res = pool.starmap(prox_operator, list_working, chunksize=chunksize)
 
-    # res: list = [None] * n_working
-    # for i in range(n_working):
-    #     arg_i = list_working[i]
-    #     res[i] = prox_operator(*arg_i)
-    return res
+# # res: list = [None] * n_working
+# # for i in range(n_working):
+# #     arg_i = list_working[i]
+# #     res[i] = prox_operator(*arg_i)
+# return res
 
 
 def prox_work_func(model: ScreeningModel, list_working: list) -> list:
@@ -266,10 +268,10 @@ def prox_minusS(
         # we fix the second-best at the first-best at the top
         for k in range(m):
             y[k * N + N - 1] = model.FB_y[-1, k]
-    start_prox = perf_counter()
+    # start_prox = perf_counter()
     res = prox_work_func(model, list_working)
-    end_prox = perf_counter()
-    print(f"\n the proximal operator took {end_prox - start_prox: > 10.5f} seconds")
+    # end_prox = perf_counter()
+    # print(f"\n the proximal operator took {end_prox - start_prox: > 10.5f} seconds")
     for i in range(n_working):
         res_i = res[i]
         i_working = working_i0[i]
@@ -429,7 +431,7 @@ def solve(
             ]
         )
         y_mat = contracts_matrix(y, N)
-        if it % 100 == 0 and log:
+        if it % 20 == 0 and log:
             print("\n\ty is:")
             print_matrix(y_mat)
             np.savetxt(
