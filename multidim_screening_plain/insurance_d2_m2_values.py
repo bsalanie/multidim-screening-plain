@@ -206,12 +206,12 @@ def S_penalties(y: np.ndarray, gr: bool = False) -> Any:
     else:
         k = y.size // 2
         grad = np.zeros((2, k))
-        grad[:k] = (
+        grad[0, :] = (
             2.0 * coeff_qpenalty_S0 * y_0
             + 2.0 * coeff_qpenalty_S0_0 * y_0_neg
             - 2.0 * coeff_qpenalty_S01_0 * y_01_small
         )
-        grad[k:] = (
+        grad[1, :] = (
             2.0 * coeff_qpenalty_S1_0 * y_1_neg
             + 2.0 * coeff_qpenalty_S1_1 * y_1_above1
             - 2.0 * coeff_qpenalty_S01_0 * y_01_small

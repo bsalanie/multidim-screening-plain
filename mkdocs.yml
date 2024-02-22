@@ -1,7 +1,7 @@
 site_name: multidim-screening-plain
 repo_url: https://github.com/bsalanie/multidim-screening-plain
 site_url: https://bsalanie.github.io/multidim-screening-plain
-site_description: multidimensional screening without Numba
+site_description: multidimensional screening
 site_author: Bernard Salanie
 edit_uri: edit/main/docs/
 repo_name: bsalanie/multidim-screening-plain
@@ -9,7 +9,10 @@ repo_name: bsalanie/multidim-screening-plain
 nav:
   - Home: index.md
   - API Reference: 
-    - Main: main.md
+    - Solver: solver.md
+    - Classes: classes.md
+    - Interface to model: specif.md
+    - Utility code: utils.md
 
 plugins:
   - search

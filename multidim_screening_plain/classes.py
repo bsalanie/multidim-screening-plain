@@ -15,10 +15,38 @@ from multidim_screening_plain.utils import contracts_matrix, print_matrix
 
 @dataclass
 class ScreeningModel:
-    """Create a model."""
+    """Create a model.
 
-    f: np.ndarray  # the numbers of individuals in each type
-    theta_mat: np.ndarray  # the characteristics of the types
+
+    Attributes:
+        f: an $N$-vector with the numbers of individuals in each type
+        theta_mat: an $N \\times d$ matrix with the types
+        type_names: a list of $d$ strings with the names of the types
+        contract_varnames: a list of $m$ strings with the names of the contract variables
+        params: a $p$-vector with the parameters of the model
+        params_names: a list of $p$ strings with the names of the parameters
+        m: the dimension of the contracts
+        model_id: a string with the name of the model
+        resdir: a Path to the directory where the results are stored
+        plotdir: a Path to the directory where the plots are stored
+        model_module: the module with the functions specific to the model
+        b_function: the function  that computes $b_i(y_j)$ for all $i,j=1,\\ldots,n$
+        S_function: the function that computes $S_i(y_i)$ for one type $i$
+        proximal_operator_surplus: the proximal operator of the surplus
+        N: the number of types
+        d: their dimension
+        v0: the initial values of the dual variables
+        y_init: the initial values of the contracts
+        free_y: the indices of the  contracts over which we optimize
+        norm_lLambda: the norm of the $\\Lambda$ function
+        M: the value of the $M$ parameter (for the step size)
+        FB_y: thefirst-best contracts for the $N$ types
+        precalculated_values: a dictionary with values that do not depend on the
+            contracts and therefore can be calculated before the optimization.
+    """
+
+    f: np.ndarray
+    theta_mat: np.ndarray
     type_names: list[str]
     contract_varnames: list[str]
     params: np.ndarray  # the parameters of the model
@@ -32,7 +60,7 @@ class ScreeningModel:
     S_function: Callable
     proximal_operator_surplus: Callable
 
-    N: int = field(init=False)  # the number of types
+    N: int = field(init=False)
     d: int = field(init=False)  # their dimension
     v0: np.ndarray = field(init=False)
     y_init: np.ndarray = field(init=False)
@@ -105,7 +133,9 @@ class ScreeningResults:
     additional_results: list | None = None
     additional_results_names: list | None = None
 
-    def add_utilities(self, S_first, U_second, S_second) -> None:
+    def add_utilities(
+        self, S_first: np.ndarray, U_second: np.ndarray, S_second: np.ndarray
+    ) -> None:
         """Add the utilities to the results.
 
         Args:
@@ -118,11 +148,7 @@ class ScreeningResults:
         self.info_rents = U_second
 
     def output_results(self) -> None:
-        """prints the optimal contracts, and saves a dataframe
-
-        Args:
-            self: the `Results`.
-        """
+        """prints the optimal contracts, and saves the results in a dataframe."""
         model = self.model
         theta_mat, y_mat = model.theta_mat, self.SB_y
         df_output = pd.DataFrame(

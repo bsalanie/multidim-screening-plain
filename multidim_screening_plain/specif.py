@@ -144,8 +144,8 @@ def initialize_contracts(
         y_first_best_mat: the `(N, m)` matrix of first best contracts. Defaults to None.
 
     Returns:
-        tuple[np.ndarray, list]: initial contracts (an `(N,m)` matrix) and a list of types for whom
-         we optimize contracts
+        tuple[np.ndarray, list]: initial contracts (an `(N,m)` matrix)
+        and a list of types for whom we optimize contracts.
     """
     return cast(
         tuple[np.ndarray, list],
@@ -171,6 +171,6 @@ def plot(model: ScreeningModel) -> None:
     """Plots the results
 
     Args:
-        results: the results
+        model: The ScreeningModel
     """
     model.model_module.plot_results(model)

@@ -33,11 +33,14 @@ from multidim_screening_plain.utils import (
 )
 
 
-def precalculate_values(model: ScreeningModel) -> dict:
-    deltas = model.theta_mat[:, 1]
+def precalculate(model: ScreeningModel) -> dict:
+    theta_mat = model.theta_mat
+    sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
     s = model.params[0]
     values_A = val_A(deltas, s)
-    return {"values_A": values_A}
+    y_no_insurance = np.array([0.0, 1.0])
+    I_no_insurance = val_I(y_no_insurance, sigmas, deltas, s)[:, 0]
+    return {"values_A": values_A, "I_no_insurance": I_no_insurance}
 
 
 def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
@@ -61,8 +64,6 @@ def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = F
         diff_logs = np.log(value_non_insured) - np.log(value_insured)
         return diff_logs / sigmas.reshape((-1, 1))
     else:
-        # print(f"for {theta_mat=} and {y=}:")
-        # print(f"   we have {value_insured[0]=} and {value_non_insured[0]=}")
         val_insured, dval_insured = value_insured
         diff_logs = np.log(value_non_insured[0]) - np.log(val_insured)
         denom_inv = 1.0 / (val_insured * sigmas.reshape((-1, 1)))
@@ -72,18 +73,19 @@ def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = F
         return diff_logs / sigmas.reshape((-1, 1)), grad
 
 
-def S_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
-    """evaluates the joint surplus, and maybe its gradient
+def S_fun(y: np.ndarray, theta: np.ndarray, params: np.ndarray, gr: bool = False):
+    """evaluates the joint surplus, and maybe its gradient, for 1 contract for 1 type
 
     Args:
-        y:  a $2 k$-vector of $k$ contracts
-        theta_mat: a $(q,2)$-vector of characteristics of types
+        y:  a $2$-vector of 1 contract $y$
+        theta: a $2$-vector of characteristics of 1 type $\theta$
         params: the parameters of the model
         gr: whether we compute the gradient
 
     Returns:
-        a $(q,k)$-matrix: $S_{ij} = S(y_j, \theta_i)$; and an $(m,q,k)$ array if `gr` is `True`
+        S(y, \theta)$,  and an $m$ array of its derivates wrt $y$ if `gr` is `True`
     """
+    theta_mat = theta.reshape((1, 2))
     deltas = theta_mat[:, 1]
     s, loading = params[0], params[1]
     b_vals, D_vals, penalties = (
@@ -92,14 +94,17 @@ def S_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = F
         S_penalties(y, gr),
     )
     if not gr:
-        return b_vals - (1.0 + loading) * D_vals - penalties
+        return b_vals[0, 0] - (1.0 + loading) * D_vals[0, 0] - penalties
     else:
-        # print(f"for {theta_mat=} and {y=}:")
-        # print(f"   we have {b_vals[0]=} and {D_vals[0]=} and {penalties[0]=}")
-        val_S = b_vals[0] - (1.0 + loading) * D_vals[0] - penalties[0]
-        grad_S = b_vals[1] - (1.0 + loading) * D_vals[1]
-        grad_S[0, :, :] -= penalties[1][0, :]
-        grad_S[1, :, :] -= penalties[1][1, :]
+        b_values, b_gradient = b_vals
+        D_values, D_gradient = D_vals
+        val_penalties, grad_penalties = penalties
+        val_S = b_values[0, 0] - (1.0 + loading) * D_values[0, 0] - val_penalties
+        grad_S = (
+            b_gradient[:, 0, 0]
+            - (1.0 + loading) * D_gradient[:, 0, 0]
+            - grad_penalties[:, 0]
+        )
         return val_S, grad_S
 
 
@@ -185,22 +190,20 @@ def proximal_operator(
     Returns:
         the minimizing $y$, an $m$-vector
     """
-    d = theta.size
-    theta_mat1 = theta.reshape((1, d))
 
     def prox_obj_and_grad(
         y: np.ndarray, args: list, gr: bool = False
     ) -> float | tuple[float, np.ndarray]:
-        S_vals = S_fun(y, theta_mat1, params, gr)
+        S_vals = S_fun(y, theta, params, gr)
         if not gr:
-            obj = -S_vals[0, 0]
+            obj = -S_vals
             if t is not None:
                 dyz = y - z
                 dist_yz2 = np.sum(dyz * dyz)
                 obj += dist_yz2 / (2 * t)
             return cast(float, obj)
         if gr:
-            obj, grad = -S_vals[0][0, 0], -S_vals[1][:, 0, 0]
+            obj, grad = -S_vals[0], -S_vals[1]
             if t is not None:
                 dyz = y - z
                 dist_yz2 = np.sum(dyz * dyz)

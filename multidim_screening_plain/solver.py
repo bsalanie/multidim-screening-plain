@@ -540,17 +540,21 @@ def compute_utilities(
         S_second: an $N$-vector of the values of the joint surplus in the second-best
     """
     model = results.model
+    N = model.N
     S_function = model.S_function
     y_first_best = model.FB_y
     theta_mat = model.theta_mat
     params = model.params
-    y_first = contracts_vector(y_first_best)
-    S_first = np.diag(S_function(y_first, theta_mat, params))
+    S_first = np.zeros(N)
+    S_second = np.zeros(N)
     y_second_best = results.SB_y
-    N = y_second_best.shape[0]
+    for i in range(N):
+        theta = theta_mat[i, :]
+        S_first[i] = S_function(y_first_best[i, :], theta, params)
+        S_second[i] = S_function(y_second_best[i, :], theta, params)
     y_second = contracts_vector(y_second_best)
     Lambda_vals = nlLambda(model, y_second, theta_mat, params).reshape((N, N))
-    S_second = np.diag(S_function(y_second, theta_mat, params))
+
     U_second = U_old = np.zeros(N)
     dU = np.inf
     it_max = N
