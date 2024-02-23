@@ -9,9 +9,9 @@ repo_name: bsalanie/multidim-screening-plain
 nav:
   - Home: index.md
   - API Reference: 
-    - Solver: solver.md
     - Classes: classes.md
-    - Interface to model: specif.md
+    - Model setup: setup.md
+    - Solver: solver.md
     - Utility code: utils.md
 
 plugins:

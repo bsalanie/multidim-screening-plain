@@ -238,7 +238,7 @@ def proximal_operator(
         return None
 
 
-def additional_results(
+def add_results(
     results: ScreeningResults,
 ) -> None:
     """Adds more results to the `ScreeningResults` object

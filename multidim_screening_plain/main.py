@@ -9,17 +9,12 @@ import numpy as np
 import pandas as pd
 from dotenv import dotenv_values
 
+from multidim_screening_plain.setup import setup_model
 from multidim_screening_plain.solver import (
     JLambda,
     compute_utilities,
     get_first_best,
     solve,
-)
-from multidim_screening_plain.specif import (
-    add_results,
-    initialize_contracts,
-    plot,
-    setup_model,
 )
 
 if __name__ == "__main__":
@@ -27,7 +22,7 @@ if __name__ == "__main__":
     config = dotenv_values(Path.cwd() / "multidim_screening_plain" / "config.env")
     model = setup_model(config)
     module = model.model_module
-    precalculated = module.precalculate(model)
+    module.precalculate(model)
 
     print(model)
 
@@ -50,7 +45,9 @@ if __name__ == "__main__":
 
     if do_solve:  # we solve for the second best
         # initial values
-        y_init, free_y = initialize_contracts(model, start_from_first_best, FB_y)
+        y_init, free_y = module.create_initial_contracts(
+            model, start_from_first_best, FB_y
+        )
         JLy = JLambda(model, y_init, model.theta_mat, model.params)
         model.initialize(y_init, free_y, JLy)
 
@@ -70,7 +67,7 @@ if __name__ == "__main__":
 
         S_first, U_second, S_second = compute_utilities(results)
         results.add_utilities(S_first, U_second, S_second)
-        add_results(results)
+        module.add_results(results)
 
         results.output_results()
 
@@ -79,4 +76,4 @@ if __name__ == "__main__":
         print(results)
 
     if do_plots:
-        plot(model)
+        module.plot_results(model)
