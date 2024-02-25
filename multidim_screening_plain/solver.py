@@ -72,7 +72,7 @@ def JLambda(
     b_function = model.b_function
     N, m = theta_mat.shape
     # we compute the (N, N) matrices db_i/dy_0(y_j) and db_i/dy_1(y_j)
-    _, db_vals = b_function(y, theta_mat, params, gr=True)
+    _, db_vals = b_function(model, y, gr=True)
     J = np.zeros((2, N, N))
     for i in range(m):
         db_vals_i = db_vals[i, :, :]
@@ -91,7 +91,6 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
     """
     prox_operator = model.proximal_operator_surplus
     theta_mat = model.theta_mat
-    params = model.params
     N, m = model.N, model.m
     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
 
@@ -99,8 +98,8 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
     y_first = np.empty((N, m))
     for i in range(N):
         sigma, delta = sigmas[i], deltas[i]
-        theta_mat1 = np.array([sigma, delta])
-        y_first[i, :] = prox_operator(z, theta_mat1, params)
+        theta_i = np.array([sigma, delta])
+        y_first[i, :] = prox_operator(model, z, theta_i)
         if i % 10 == 0:
             print(f" Done {i=} types out of {N}")
             print(f"\ni={i}, sigma={sigma: >8.3f}, delta={delta: >8.3f}:")
@@ -173,7 +172,7 @@ def nlLambda(
     """
     b_function = model.b_function
     N = theta_mat.shape[0]
-    b_vals = b_function(y, theta_mat, params)
+    b_vals = b_function(model, y)
     db = b_vals
     for j in range(N):
         db[:, j] -= b_vals[j, j]
@@ -245,7 +244,6 @@ def prox_minusS(
     theta_mat = model.theta_mat
     N = theta_mat.shape[0]
     m = model.m
-    params = model.params
     f = model.f
 
     # these are the types we will be working with
@@ -254,9 +252,9 @@ def prox_minusS(
 
     list_working = [
         [
+            model,
             np.array([z[k * N + i] for k in range(m)]),
             theta_mat[i, :],
-            params,
             tau * f[i],
         ]
         for i in working_i0
@@ -550,8 +548,8 @@ def compute_utilities(
     y_second_best = results.SB_y
     for i in range(N):
         theta = theta_mat[i, :]
-        S_first[i] = S_function(y_first_best[i, :], theta, params)
-        S_second[i] = S_function(y_second_best[i, :], theta, params)
+        S_first[i] = S_function(model, y_first_best[i, :], theta=theta)
+        S_second[i] = S_function(model, y_second_best[i, :], theta=theta)
     y_second = contracts_vector(y_second_best)
     Lambda_vals = nlLambda(model, y_second, theta_mat, params).reshape((N, N))
 

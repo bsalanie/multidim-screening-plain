@@ -18,9 +18,10 @@ from multidim_screening_plain.insurance_d2_m2_plots import (
 )
 from multidim_screening_plain.insurance_d2_m2_values import (
     S_penalties,
-    cost_non_insur,
-    expected_positive_loss,
-    proba_claim,
+    check_args,
+    # cost_non_insur,
+    # expected_positive_loss,
+    # proba_claim,
     val_A,
     val_D,
     val_I,
@@ -33,78 +34,108 @@ from multidim_screening_plain.utils import (
 )
 
 
-def precalculate(model: ScreeningModel) -> dict:
+def precalculate(model: ScreeningModel) -> None:
     theta_mat = model.theta_mat
     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
     s = model.params[0]
     values_A = val_A(deltas, s)
+    sigmas_s = s * sigmas
+    argu1 = deltas / s + sigmas_s
+    val_expB = np.exp(sigmas * (s * sigmas_s / 2.0 + deltas))
+    model.precalculated_values = {
+        "values_A": cast(np.ndarray, values_A),
+        "argu1": cast(np.ndarray, argu1),
+        "val_expB": cast(np.ndarray, val_expB),
+    }
     y_no_insurance = np.array([0.0, 1.0])
-    I_no_insurance = val_I(y_no_insurance, sigmas, deltas, s)[:, 0]
-    return {"values_A": values_A, "I_no_insurance": I_no_insurance}
+    I_no_insurance = val_I(model, y_no_insurance)[:, 0]
+    model.precalculated_values["I_no_insurance"] = cast(np.ndarray, I_no_insurance)
 
 
-def b_fun(y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray, gr: bool = False):
+def b_fun(
+    model: ScreeningModel,
+    y: np.ndarray,
+    theta: np.ndarray | None = None,
+    gr: bool = False,
+):
     """evaluates the value of the coverage, and maybe its gradient
 
     Args:
-        y:  a $2 k$-vector of $k$ contracts
-        theta_mat: a $(q,2)$-vector of characteristics of types
-        params: the parameters of the model
+        model: the ScreeningModel
+        y:  a `2 k`-vector of $k$ contracts
+        theta: a 2-vector of characteristics of one type, if provided
         gr: whether we compute the gradient
 
     Returns:
-        a $(q,k)$-matrix: $b_{ij} = b(y_j, \theta_i)$; and a $(2,q,k)$ array if `gr` is `True`
+        if `theta` is provided then `k` should be 1, and we return b(y,theta)
+            for this contract for this type
+        otherwise we return an (N,k)-matrix with `b_i(y_j)` for all `N` types `i` and
+            all `k` contracts `y_j` in `y`
+        and if `gr` is `True` we provide the gradient wrt `y`
     """
-    sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-    s = params[0]
-    y_no_insur = np.array([0.0, 1.0])
-    value_non_insured = val_I(y_no_insur, sigmas, deltas, s, gr)
-    value_insured = val_I(y, sigmas, deltas, s, gr)
-    if not gr:
-        diff_logs = np.log(value_non_insured) - np.log(value_insured)
-        return diff_logs / sigmas.reshape((-1, 1))
+    check_args("b_fun", y, theta)
+    if theta is not None:
+        y_no_insur = np.array([0.0, 1.0])
+        value_non_insured = val_I(model, y_no_insur, theta=theta)
+        value_insured = val_I(model, y, theta=theta, gr=gr)
+        sigma = theta[0]
+        if not gr:
+            diff_logs = np.log(value_non_insured) - np.log(value_insured)
+            return diff_logs / sigma
+        else:
+            val_insured, dval_insured = value_insured
+            diff_logs = np.log(value_non_insured) - np.log(val_insured)
+            grad = -dval_insured[0] / (val_insured * sigma)
+            return diff_logs / sigma, grad
     else:
-        val_insured, dval_insured = value_insured
-        diff_logs = np.log(value_non_insured[0]) - np.log(val_insured)
-        denom_inv = 1.0 / (val_insured * sigmas.reshape((-1, 1)))
-        grad = np.empty((2, sigmas.size, y.size // 2))
-        grad[0, :, :] = -dval_insured[0, :, :] * denom_inv
-        grad[1, :, :] = -dval_insured[1, :, :] * denom_inv
-        return diff_logs / sigmas.reshape((-1, 1)), grad
+        theta_mat = model.theta_mat
+        sigmas = theta_mat[:, 0]
+        precalculated_values = model.precalculated_values
+        value_non_insured = precalculated_values["I_no_insurance"]
+        value_insured = val_I(model, y, gr=gr)
+        if not gr:
+            diff_logs = np.log(value_non_insured) - np.log(value_insured)
+            return diff_logs / sigmas.reshape((-1, 1))
+        else:
+            val_insured, dval_insured = value_insured
+            diff_logs = np.log(value_non_insured) - np.log(val_insured)
+            denom_inv = 1.0 / (val_insured * sigmas.reshape((-1, 1)))
+            grad = np.empty((2, sigmas.size, y.size // 2))
+            grad[0, :, :] = -dval_insured[0, :, :] * denom_inv
+            grad[1, :, :] = -dval_insured[1, :, :] * denom_inv
+            return diff_logs / sigmas.reshape((-1, 1)), grad
 
 
-def S_fun(y: np.ndarray, theta: np.ndarray, params: np.ndarray, gr: bool = False):
+def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = False):
     """evaluates the joint surplus, and maybe its gradient, for 1 contract for 1 type
 
     Args:
-        y:  a $2$-vector of 1 contract $y$
-        theta: a $2$-vector of characteristics of 1 type $\theta$
-        params: the parameters of the model
+        model: the ScreeningModel
+        y:  a 2-vector of 1 contract `y`
+        theta: a 2-vector of characteristics of one type
         gr: whether we compute the gradient
 
     Returns:
-        S(y, \theta)$,  and an $m$ array of its derivates wrt $y$ if `gr` is `True`
+        the value of `S(y,theta)` for this contract and this type,
+            and its gradient wrt `y` if `gr` is `True`
     """
-    theta_mat = theta.reshape((1, 2))
-    deltas = theta_mat[:, 1]
+    check_args("S_fun", y, theta)
+    delta = theta[1]
+    params = model.params
     s, loading = params[0], params[1]
     b_vals, D_vals, penalties = (
-        b_fun(y, theta_mat, params, gr),
-        val_D(y, deltas, s, gr),
-        S_penalties(y, gr),
+        b_fun(model, y, theta=theta, gr=gr),
+        val_D(y, delta, s, gr=gr),
+        S_penalties(y, gr=gr),
     )
     if not gr:
-        return b_vals[0, 0] - (1.0 + loading) * D_vals[0, 0] - penalties
+        return b_vals - (1.0 + loading) * D_vals - penalties
     else:
         b_values, b_gradient = b_vals
         D_values, D_gradient = D_vals
         val_penalties, grad_penalties = penalties
-        val_S = b_values[0, 0] - (1.0 + loading) * D_values[0, 0] - val_penalties
-        grad_S = (
-            b_gradient[:, 0, 0]
-            - (1.0 + loading) * D_gradient[:, 0, 0]
-            - grad_penalties[:, 0]
-        )
+        val_S = b_values - (1.0 + loading) * D_values - val_penalties
+        grad_S = b_gradient - (1.0 + loading) * D_gradient - grad_penalties
         return val_S, grad_S
 
 
@@ -137,21 +168,6 @@ def create_initial_contracts(
         y_init = np.loadtxt(model_resdir / "current_y.txt")
         EPS = 0.001
         set_not_insured = {i for i in range(N) if y_init[i, 1] > 1.0 - EPS}
-        # not_insured2 = {i for i in range(N) if theta_mat[i, 1] <= -6.0}
-        # not_insured3 = {
-        #     i
-        #     for i in range(N)
-        #     if theta_mat[i, 1] <= -5.0 and theta_mat[i, 0] <= 0.425
-        # }
-        # not_insured4 = {
-        #     i
-        #     for i in range(N)
-        #     if theta_mat[i, 1] <= -4.0 and theta_mat[i, 0] <= 0.35
-        # }
-        # set_only_deductible = {i for i in range(N) if (start_from_current and y_init[i, 0] < EPS)}
-        # set_fixed_y = set_not_insured.union(
-        #         set_only_deductible
-        #     )
         set_fixed_y = set_not_insured
 
         set_free_y = set(range(N)).difference(set_fixed_y)
@@ -176,25 +192,25 @@ def create_initial_contracts(
 
 
 def proximal_operator(
-    z: np.ndarray, theta: np.ndarray, params: np.ndarray, t: float | None = None
+    model: ScreeningModel, z: np.ndarray, theta: np.ndarray, t: float | None = None
 ) -> np.ndarray | None:
     """Proximal operator of -t S_i at z;
         minimizes $-S_i(y) + 1/(2 t) \\lVert y-z \rVert^2$
 
     Args:
+        model: the ScreeningModel
         z: an `m`-vector
-        theta: type $i$'s characteristics, a $d$-vector
-        params: the parameters of the model
-        t: the step; if None, we maximize $S_i(y)$
+        theta: type `i`'s characteristics, a `d`-vector
+        t: the step; if None, we maximize `S_i(y)`
 
     Returns:
-        the minimizing $y$, an $m$-vector
+        the minimizing `y`, a 2-vector
     """
 
     def prox_obj_and_grad(
         y: np.ndarray, args: list, gr: bool = False
     ) -> float | tuple[float, np.ndarray]:
-        S_vals = S_fun(y, theta, params, gr)
+        S_vals = S_fun(model, y, theta=theta, gr=gr)
         if not gr:
             obj = -S_vals
             if t is not None:
@@ -247,7 +263,8 @@ def add_results(
         results: the results
     """
     model = results.model
-    sigmas, deltas = model.theta_mat[:, 0], model.theta_mat[:, 1]
+    N = model.N
+    theta_mat = model.theta_mat
     s = model.params[0]
     results.additional_results_names = [
         "Second-best actuarial premium",
@@ -257,25 +274,36 @@ def add_results(
     ]
     FB_y_vec = contracts_vector(model.FB_y)
     SB_y_vec = contracts_vector(results.SB_y)
-    FB_values_coverage = np.diag(b_fun(FB_y_vec, model.theta_mat, model.params))
-    FB_actuarial_premia = np.diag(val_D(FB_y_vec, deltas, s))
-    SB_values_coverage = np.diag(b_fun(SB_y_vec, model.theta_mat, model.params))
-    SB_actuarial_premia = np.diag(val_D(SB_y_vec, deltas, s))
+    FB_values_coverage = np.zeros(N)
+    FB_actuarial_premia = np.zeros(N)
+    SB_values_coverage = np.zeros(N)
+    SB_actuarial_premia = np.zeros(N)
+
+    for i in range(N):
+        FB_i = FB_y_vec[i, :]
+        theta_i = theta_mat[i, :]
+        delta_i = theta_i[1]
+        FB_values_coverage[i] = b_fun(model, FB_i, theta=theta_i)
+        FB_actuarial_premia[i] = val_D(FB_i, delta_i, s)
+        SB_i = SB_y_vec[i]
+        SB_values_coverage[i] = b_fun(model, SB_i, theta=theta_i)
+        SB_actuarial_premia[i] = val_D(SB_i, delta_i, s)
+
     results.additional_results = [
         FB_actuarial_premia,
         SB_actuarial_premia,
-        cost_non_insur(sigmas, deltas, s),
-        expected_positive_loss(deltas, s),
-        proba_claim(deltas, s),
+        # cost_non_insur(sigmas, deltas, s),
+        # expected_positive_loss(deltas, s),
+        # proba_claim(deltas, s),
         FB_values_coverage,
         SB_values_coverage,
     ]
     results.additional_results_names = [
         "Actuarial premium at first-best",
         "Actuarial premium at second-best",
-        "Cost of non-insurance",
-        "Expected positive loss",
-        "Probability of claim",
+        # "Cost of non-insurance",
+        # "Expected positive loss",
+        # "Probability of claim",
         "Value of first-best coverage",
         "Value of second-best coverage",
     ]
