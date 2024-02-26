@@ -1,0 +1,10 @@
+N = 10, tau = 1.44e+00, sig = 1.44e+00, step ratio = 1.0, primal tol = 3.16e-05, dual tol = 1.00e-04
+ara = 0.5, s = 4.0, loading = 0.25
+convergence = True, iterations = 3489, elapsed time = 0:00:28.284099
+primal residual = 1.10e-02 tol,  dual residual = 1.00e+00 tol
+
+N = 10, tau = 1.44e+00, sig = 1.44e+00, step ratio = 1.0, primal tol = 3.16e-05, dual tol = 1.00e-04
+ara = 0.5, s = 4.0, loading = 0.25
+convergence = True, iterations = 3489, elapsed time = 0:00:28.362351
+primal residual = 1.10e-02 tol,  dual residual = 1.00e+00 tol
+

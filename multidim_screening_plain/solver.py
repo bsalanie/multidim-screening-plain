@@ -73,7 +73,7 @@ def JLambda(
     N, m = theta_mat.shape
     # we compute the (N, N) matrices db_i/dy_0(y_j) and db_i/dy_1(y_j)
     _, db_vals = b_function(model, y, gr=True)
-    J = np.zeros((2, N, N))
+    J = np.zeros((m, N, N))
     for i in range(m):
         db_vals_i = db_vals[i, :, :]
         J[i, :, :] = db_vals_i - np.diag(db_vals_i)
@@ -92,17 +92,15 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
     prox_operator = model.proximal_operator_surplus
     theta_mat = model.theta_mat
     N, m = model.N, model.m
-    sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
 
     z = np.zeros(m)  # it does not matter in the first-best
     y_first = np.empty((N, m))
     for i in range(N):
-        sigma, delta = sigmas[i], deltas[i]
-        theta_i = np.array([sigma, delta])
+        theta_i = theta_mat[i, :]
         y_first[i, :] = prox_operator(model, z, theta_i)
         if i % 10 == 0:
             print(f" Done {i=} types out of {N}")
-            print(f"\ni={i}, sigma={sigma: >8.3f}, delta={delta: >8.3f}:")
+            print(f"\ni={i}, theta={theta_i}:")
             print("\t\t first-best contract:")
             print_row(y_first, i)
 
