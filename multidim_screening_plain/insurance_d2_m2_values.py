@@ -2,7 +2,6 @@
 with two-dimensional types (risk-aversion, risk) and (deductible, copay) contracts
 """
 
-from math import exp
 from typing import Any, cast
 
 import numpy as np
@@ -70,18 +69,17 @@ def check_args(function_name: str, y: np.ndarray, theta: np.ndarray | None) -> N
             )
 
 
-def val_A(deltas: np.ndarray, s: float) -> Any:
-    """evaluates $A(\\delta,s)$, the probability that the loss is less than the deductible
-    for all values of $\\delta$ in `deltas`
+def val_A(deltas: np.ndarray | float, s: float) -> np.ndarray | float:
+    """evaluates `A(delta,s)`, the probability that the loss is less than the deductible
+    for all values of `delta` in `deltas`
 
     Args:
-        deltas: a $q$-vector of risk parameters
+        deltas: a `q`-vector of risk parameters, or a single value
         s: the dispersion of losses
 
     Returns:
-        the value of $A(\\delta,s)$ as a $q$-vector
+        the values of `A(delta,s)` as a `q`-vector, or a single value
     """
-    # return norm.cdf(-deltas / s, 0.0, 1.0)
     return bs_norm_cdf(-deltas / s)
 
 
@@ -109,6 +107,7 @@ def val_BC(
     """
     check_args("val_BC", y, theta)
     if theta is not None:
+        # print(f"{y=}, {theta=}")
         y_0, y_1 = y[0], y[1]
         sigma, delta = theta[0], theta[1]
         s = model.params[0]
@@ -120,11 +119,11 @@ def val_BC(
         y1sig = sigma * y_1
         y01sig = sigma * y_0 * (1 - y_1)
         ny1sig = sigma * (1 - y_1)
+        val_expB = np.exp(sigma * (s * s * sigma / 2.0 + delta))
+        val_compB = (cdf1 - cdf2) * val_expB
+        val_expC = np.exp(y1sig * (s * s * y1sig / 2.0 + delta) + y01sig)
         d1 = dy0s + s * y1sig
         cdf_d1 = bs_norm_cdf(d1)
-        val_expB = exp(sigma * (s * s * sigma / 2.0 + delta))
-        val_compB = (cdf1 - cdf2) * val_expB
-        val_expC = exp(y1sig * (s * s * y1sig / 2.0 + delta) + y01sig)
         val_compC = cdf_d1 * val_expC
         if not gr:
             return val_compB + val_compC
@@ -136,23 +135,25 @@ def val_BC(
             grad[1] = s * H_fun(d1) * val_expC * sigma
             return val_compB + val_compC, grad
     else:
-        precalculated_values = model.precalculated_values
+        # precalculated_values = model.precalculated_values
         y_0, y_1 = split_y(y)
         theta_mat = model.theta_mat
         sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
         s = model.params[0]
-        argu1 = precalculated_values["argu1"]
+        # argu1 = precalculated_values["argu1"]
+        argu1 = deltas / s + s * sigmas
         dy0s = np.subtract.outer(deltas, y_0) / s
         argu2 = dy0s + s * sigmas.reshape((-1, 1))
         cdf1a = cast(np.ndarray, bs_norm_cdf(argu1))
+        # cdf1a = precalculated_values["cdf1"]
         cdf2 = bs_norm_cdf(argu2)
         y1sig = np.outer(sigmas, y_1)
         y01sig = np.outer(sigmas, y_0 * (1 - y_1))
         ny1sig = np.outer(sigmas, 1 - y_1)
         d1 = dy0s + s * y1sig
         cdf_d1 = bs_norm_cdf(d1)
-        # val_expB = np.exp(sigmas * (s * sigmas_s / 2.0 + deltas))
-        val_expBa = precalculated_values["val_expB"]
+        val_expBa = np.exp(sigmas * (s * s * sigmas / 2.0 + deltas))
+        # val_expBa = precalculated_values["val_expB"]
         val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * val_expBa.reshape((-1, 1))
         val_expC = np.exp(
             y1sig * (s * s * y1sig / 2.0 + deltas.reshape((-1, 1))) + y01sig
@@ -179,16 +180,14 @@ def val_D(y: np.ndarray, delta: float, s: float, gr: bool = False) -> Any:
         y: a 2-vector of 1 contract
         delta: a risk location parameter
         s: the dispersion of losses
+        if `gr` we also return its gradient  wrt `y`
 
     Returns:
         the value of `D(y,delta,s)`
             and its gradient  wrt `y` if `gr` is `True`
     """
     y_0, y_1 = y
-    # dy0s = my_outer_add(deltas, -y_0) / s
-    dy0s = np.array([(delta - y_0) / s])
-    # val_comp = s * (n01_pdf_mat(dy0s) + dy0s * n01_cdf_mat(dy0s)) * (1 - y_1)
-    # val_comp = s * (norm.pdf(dy0s) + dy0s * norm.cdf(dy0s)) * (1 - y_1)
+    dy0s = (delta - y_0) / s
     s_H = s * H_fun(dy0s)
     val_comp = s_H * (1 - y_1)
     if not gr:
@@ -209,19 +208,23 @@ def val_I(
     """computes the integral `I`, and its gradient wrt `y` if `gr` is `True`
 
     Args:
+        model: the ScreeningModel
         y:  a `2 k`-vector of `k` contracts
         theta: if provided, should be a 2-vector with the characteristics of one type;
             then `k` should equal 1
+        gr: if `True`, we also return the gradient
 
     Returns:
-        the value of `I(y,theta,s)` as a $(q, k)$ matrix
+        if `theta` is provided, the value of `I(y,theta,s)` for this type and contract;
+        otherwise, the values of `I(y,t,s)` for all types and for all contracts in `y` as an $(N, k)$ matrix
+        if `gr` is `True` we also return the gradient.
     """
     check_args("val_I", y, theta)
-    precalculated_values = model.precalculated_values
+    # precalculated_values = model.precalculated_values
     if theta is not None:
         delta = theta[1]
         s = model.params[0]
-        value_A = val_A(np.array([delta]), s)[0]
+        value_A = cast(float, val_A(delta, s))
         value_BC = val_BC(model, y, theta=theta, gr=gr)
         if not gr:
             return value_BC + value_A
@@ -229,33 +232,16 @@ def val_I(
             val, grad = value_BC
             return val + value_A, grad
     else:
-        value_A = precalculated_values["values_A"]
+        # value_A2 = cast(np.ndarray, precalculated_values["values_A"])
+        deltas = model.theta_mat[:, 1]
+        s = model.params[0]
+        value_A2 = val_A(deltas, s)
         value_BC = val_BC(model, y, gr=gr)
         if not gr:
-            return value_BC + value_A.reshape((-1, 1))
+            return value_BC + value_A2.reshape((-1, 1))
         else:
             val, grad = value_BC
-            return val + value_A.reshape((-1, 1)), grad
-
-
-def val_I_N(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
-    """computes the integral $I$ for all values in `y`
-    when `(sigmas, deltas)` are the `N` types
-
-    Args:
-        model: the ScreeningModel
-        y:  a $2 k$-vector of $k$ contracts
-
-    Returns:
-        the value of $I(y,\\sigma,\\delta,s)$ as a $(q, k)$ matrix
-    """
-    value_A = model.precalculated_values["values_A"]  # s_norm_cdf(-deltas / s)
-    value_BC = val_BC(model, y, gr=gr)
-    if not gr:
-        return value_BC + value_A.reshape((-1, 1))
-    else:
-        val, grad = value_BC
-        return val + value_A.reshape((-1, 1)), grad
+            return val + value_A2.reshape((-1, 1)), grad
 
 
 def S_penalties(y: np.ndarray, gr: bool = False) -> Any:

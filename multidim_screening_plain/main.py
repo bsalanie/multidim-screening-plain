@@ -22,7 +22,7 @@ if __name__ == "__main__":
     config = dotenv_values(Path.cwd() / "multidim_screening_plain" / "config.env")
     model = setup_model(config)
     module = model.model_module
-    module.precalculate(model)
+    # module.precalculate(model)
 
     print(model)
 

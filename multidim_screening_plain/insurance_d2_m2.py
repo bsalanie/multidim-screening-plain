@@ -19,14 +19,15 @@ from multidim_screening_plain.insurance_d2_m2_plots import (
 from multidim_screening_plain.insurance_d2_m2_values import (
     S_penalties,
     check_args,
-    # cost_non_insur,
-    # expected_positive_loss,
-    # proba_claim,
+    cost_non_insur,
+    expected_positive_loss,
+    proba_claim,
     val_A,
     val_D,
     val_I,
 )
 from multidim_screening_plain.utils import (
+    bs_norm_cdf,
     contracts_vector,
     display_variable,
     plot_constraints,
@@ -41,14 +42,16 @@ def precalculate(model: ScreeningModel) -> None:
     values_A = val_A(deltas, s)
     sigmas_s = s * sigmas
     argu1 = deltas / s + sigmas_s
+    cdf1 = bs_norm_cdf(argu1)
     val_expB = np.exp(sigmas * (s * sigmas_s / 2.0 + deltas))
     model.precalculated_values = {
         "values_A": cast(np.ndarray, values_A),
         "argu1": cast(np.ndarray, argu1),
+        "cdf1": cast(np.ndarray, cdf1),
         "val_expB": cast(np.ndarray, val_expB),
     }
     y_no_insurance = np.array([0.0, 1.0])
-    I_no_insurance = val_I(model, y_no_insurance)[:, 0]
+    I_no_insurance = val_I(model, y_no_insurance)  # [:, 0]
     model.precalculated_values["I_no_insurance"] = cast(np.ndarray, I_no_insurance)
 
 
@@ -85,13 +88,18 @@ def b_fun(
         else:
             val_insured, dval_insured = value_insured
             diff_logs = np.log(value_non_insured) - np.log(val_insured)
-            grad = -dval_insured[0] / (val_insured * sigma)
+            grad = -dval_insured / (val_insured * sigma)
             return diff_logs / sigma, grad
     else:
         theta_mat = model.theta_mat
         sigmas = theta_mat[:, 0]
-        precalculated_values = model.precalculated_values
-        value_non_insured = precalculated_values["I_no_insurance"]
+        # precalculated_values = model.precalculated_values
+        # value_non_insured = precalculated_values["I_no_insurance"]
+        # print(f"precalc: {value_non_insured}")
+        y_no_insur = np.array([0.0, 1.0])
+        value_non_insured = val_I(model, y_no_insur)
+        # # print(f"calc: {value_non_insured}")
+        # assert np.allclose(value_non_insured, value_non_insured_calc)
         value_insured = val_I(model, y, gr=gr)
         if not gr:
             diff_logs = np.log(value_non_insured) - np.log(value_insured)
@@ -194,8 +202,8 @@ def create_initial_contracts(
 def proximal_operator(
     model: ScreeningModel, z: np.ndarray, theta: np.ndarray, t: float | None = None
 ) -> np.ndarray | None:
-    """Proximal operator of -t S_i at z;
-        minimizes $-S_i(y) + 1/(2 t) \\lVert y-z \rVert^2$
+    """Proximal operator of `-t S_i` at `z`;
+        minimizes `-S_i(y) + 1/(2 t)  ||y-z||^2`
 
     Args:
         model: the ScreeningModel
@@ -266,44 +274,40 @@ def add_results(
     N = model.N
     theta_mat = model.theta_mat
     s = model.params[0]
-    results.additional_results_names = [
-        "Second-best actuarial premium",
-        "Cost of non-insurance",
-        "Expected positive loss",
-        "Probability of claim",
-    ]
-    FB_y_vec = contracts_vector(model.FB_y)
-    SB_y_vec = contracts_vector(results.SB_y)
+
+    FB_y = model.FB_y
+    SB_y = results.SB_y
     FB_values_coverage = np.zeros(N)
     FB_actuarial_premia = np.zeros(N)
     SB_values_coverage = np.zeros(N)
     SB_actuarial_premia = np.zeros(N)
 
     for i in range(N):
-        FB_i = FB_y_vec[i, :]
+        FB_i = FB_y[i, :]
         theta_i = theta_mat[i, :]
         delta_i = theta_i[1]
         FB_values_coverage[i] = b_fun(model, FB_i, theta=theta_i)
         FB_actuarial_premia[i] = val_D(FB_i, delta_i, s)
-        SB_i = SB_y_vec[i]
+        SB_i = SB_y[i]
         SB_values_coverage[i] = b_fun(model, SB_i, theta=theta_i)
         SB_actuarial_premia[i] = val_D(SB_i, delta_i, s)
 
+    deltas = model.theta_mat[:, 1]
     results.additional_results = [
         FB_actuarial_premia,
         SB_actuarial_premia,
-        # cost_non_insur(sigmas, deltas, s),
-        # expected_positive_loss(deltas, s),
-        # proba_claim(deltas, s),
+        cost_non_insur(model),
+        expected_positive_loss(deltas, s),
+        proba_claim(deltas, s),
         FB_values_coverage,
         SB_values_coverage,
     ]
     results.additional_results_names = [
         "Actuarial premium at first-best",
         "Actuarial premium at second-best",
-        # "Cost of non-insurance",
-        # "Expected positive loss",
-        # "Probability of claim",
+        "Cost of non-insurance",
+        "Expected positive loss",
+        "Probability of claim",
         "Value of first-best coverage",
         "Value of second-best coverage",
     ]
