@@ -56,21 +56,18 @@ def construct_D(N: int) -> tuple[sparse.csr_matrix, float]:
     return D, gamma_proj
 
 
-def JLambda(
-    model: ScreeningModel, y: np.ndarray, theta_mat: np.ndarray, params: np.ndarray
-) -> np.ndarray:
+def JLambda(model: ScreeningModel, y: np.ndarray) -> np.ndarray:
     """computes $\\Lambda^\\prime_{ij}(y) = b^\\prime_i(y_j)-b^\\prime_j(y_j)$
 
     Args:
-        y: the contracts, an array of size $m N$
-        theta_mat: the types, an `(N, m)` matrix
-        params: the parameters of the model
+        model: the ScreeningModel
+        y: the contracts for all types, an array of size $m N$
 
     Returns:
         an $(m, N, N)$ array.
     """
     b_function = model.b_function
-    N, m = theta_mat.shape
+    N, m = model.N, model.m
     # we compute the (N, N) matrices db_i/dy_0(y_j) and db_i/dy_1(y_j)
     _, db_vals = b_function(model, y, gr=True)
     J = np.zeros((m, N, N))
@@ -93,14 +90,14 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
     theta_mat = model.theta_mat
     N, m = model.N, model.m
 
-    z = np.zeros(m)  # it does not matter in the first-best
     y_first = np.empty((N, m))
     for i in range(N):
         theta_i = theta_mat[i, :]
-        y_first[i, :] = prox_operator(model, z, theta_i)
+        y_first[i, :] = prox_operator(model, theta_i)
         if i % 10 == 0:
-            print(f" Done {i=} types out of {N}")
-            print(f"\ni={i}, theta={theta_i}:")
+            print(f"\n Done {i=} types out of {N}")
+            print(f"\ni={i}:  theta is")
+            print_row(theta_mat, i)
             print("\t\t first-best contract:")
             print_row(y_first, i)
 
@@ -155,21 +152,17 @@ def D_star(v_mat: np.ndarray) -> Any:
 def nlLambda(
     model: ScreeningModel,
     y: np.ndarray,
-    theta_mat: np.ndarray,
-    params: np.ndarray,
 ) -> Any:
     """computes $\\Lambda_{ij}(y) = b_i(y_j)-b_j(y_j)$
 
     Args:
         y: the contracts, a vector of size $m N$ (`y_0` then `y_1` etc)
-        theta_mat: the types, a matrix of size $(N, d)$
-        params: the parameters of the model
 
     Returns:
         an $(N,N)$ matrix.
     """
     b_function = model.b_function
-    N = theta_mat.shape[0]
+    N = model.N
     b_vals = b_function(model, y)
     db = b_vals
     for j in range(N):
@@ -362,8 +355,6 @@ def solve(
 
     v = model.v0.reshape(N * N)
     y = model.y_init
-    theta_mat = model.theta_mat
-    params = model.params
 
     # scaling of the tolerances
     if scale:
@@ -373,7 +364,7 @@ def solve(
     tau = 1.0 / (sqrt(stepratio) * model.norm_Lambda) / mult_fac
     sig = sqrt(stepratio) / model.norm_Lambda / mult_fac
 
-    JLy = JLambda(model, y, theta_mat, params)  # this is (Lambda'(y))^*
+    JLy = JLambda(model, y)
     LTv = make_LTv(v.reshape((N, N)), JLy)
 
     # loop
@@ -384,7 +375,6 @@ def solve(
     while it < it_max and not criteria.all():
         it += 1
         # primal update
-        # print("\t" * 10, f"first {y=}")
         y = prox_minusS(
             model,
             y_old - tau * LTv_old,
@@ -393,11 +383,9 @@ def solve(
             fix_top=fix_top,
             free_y=model.free_y,
         )
-        # print(f" in proj {y[25]=}")
-        # print("\t" * 10, f"change in norm {spla.norm(y - y_old) =}")
         # dual update
         y_bar = y + t_acc * (y - y_old)
-        Ly_bar = nlLambda(model, y_bar, theta_mat, params).reshape(N2)
+        Ly_bar = nlLambda(model, y_bar).reshape(N2)
         proj_res = cast(
             tuple[np.ndarray, np.ndarray, np.ndarray, int, int],
             proj_K(
@@ -409,8 +397,8 @@ def solve(
             ),
         )
         v, lamb, IR_binding, n_it_proj, proj_converged = proj_res
-        Ly = nlLambda(model, y_bar, theta_mat, params).reshape(N2)
-        JLy = JLambda(model, y, theta_mat, params)
+        Ly = nlLambda(model, y).reshape(N2)
+        JLy = JLambda(model, y)
         LTv = make_LTv(v.reshape((N, N)), JLy)
         # record
         norm1 = L2_norm((y_old - y) * t_acc / tau - (LTv_old - LTv))
@@ -540,7 +528,6 @@ def compute_utilities(
     S_function = model.S_function
     y_first_best = model.FB_y
     theta_mat = model.theta_mat
-    params = model.params
     S_first = np.zeros(N)
     S_second = np.zeros(N)
     y_second_best = results.SB_y
@@ -549,7 +536,7 @@ def compute_utilities(
         S_first[i] = S_function(model, y_first_best[i, :], theta=theta)
         S_second[i] = S_function(model, y_second_best[i, :], theta=theta)
     y_second = contracts_vector(y_second_best)
-    Lambda_vals = nlLambda(model, y_second, theta_mat, params).reshape((N, N))
+    Lambda_vals = nlLambda(model, y_second).reshape((N, N))
 
     U_second = U_old = np.zeros(N)
     dU = np.inf

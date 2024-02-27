@@ -80,7 +80,7 @@ class ScreeningModel:
         self.v0 = np.zeros((self.N, self.N))
 
     def add_first_best(self, y_first_best: np.ndarray):
-        self.FB_y = y_first_best
+        self.FB_y = y_first_best.reshape((self.N, self.m))
 
     def initialize(self, y_init: np.ndarray, free_y: list, JLy: np.ndarray):
         self.y_init = y_init

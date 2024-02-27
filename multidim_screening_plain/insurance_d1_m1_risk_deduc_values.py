@@ -66,7 +66,7 @@ def val_A(deltas: np.ndarray | float, s: float) -> np.ndarray | float:
 def val_BC(
     model: ScreeningModel,
     y: np.ndarray,
-    theta: float | None = None,
+    theta: np.ndarray | None = None,
     gr: bool = False,
 ) -> Any:
     """evaluates the values of `B+C`
@@ -74,7 +74,7 @@ def val_BC(
     Args:
         model: the ScreeningModel
         y:  a `k`-vector of `k` contracts
-        theta: if provided, a 2-vector with the characteristics of one type
+        theta: if provided, a 1-vector for one type
         gr: if `True`, we also return the derivatives wrt `y`
 
     Returns:
@@ -89,52 +89,65 @@ def val_BC(
     params = model.params
     sigma, s = params[0], params[1]
     if theta is not None:
-        delta = theta
-        argu1 = delta / s + s * sigma
-        dy0s = (delta - y[0]) / s
-        argu2 = dy0s + s * sigma
-        cdf1 = bs_norm_cdf(argu1)
-        cdf2 = bs_norm_cdf(argu2)
-        y0sig = sigma * y[0]
-        val_expB = np.exp(sigma * (s * s * sigma / 2.0 + delta))
-        val_compB = (cdf1 - cdf2) * val_expB
-        val_expC = np.exp(y0sig)
-        cdf_d1 = bs_norm_cdf(dy0s)
-        # print(f"no gr: {y[0]=}, {theta[0]=}, {val_expC=}, {cdf_d1=}")
-        val_compC = cdf_d1 * val_expC
-        if not gr:
-            return val_compB + val_compC
-        else:
-            # print(f"{y[0]=}, {theta[0]=}")
-            pdf2 = bs_norm_pdf(argu2)
-            pdf_d1 = bs_norm_pdf(dy0s)
-            grad = np.zeros(1)
-            grad[0] = pdf2 * val_expB / s + (cdf_d1 * sigma - pdf_d1 / s) * val_expC
-            return val_compB + val_compC, grad
+        return val_BC_1(theta, y, sigma, s, gr=gr)
     else:
-        deltas = model.theta_mat[:, 0]
-        argu1 = deltas / s + s * sigma
-        dy0s = np.subtract.outer(deltas, y) / s
-        argu2 = dy0s + s * sigma
-        cdf1a = cast(np.ndarray, bs_norm_cdf(argu1))
-        cdf2 = bs_norm_cdf(argu2)
-        y0sig = sigma * y
-        cdf_d1 = bs_norm_cdf(dy0s)
-        val_expBa = np.exp(sigma * (s * s * sigma / 2.0 + deltas))
-        val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * val_expBa.reshape((-1, 1))
-        val_expC = np.exp(y0sig)
-        val_compC = cdf_d1 * val_expC
-        if not gr:
-            return val_compB + val_compC
-        else:
-            pdf2 = bs_norm_pdf(argu2)
-            pdf_d1 = bs_norm_pdf(dy0s)
-            grad = np.zeros((1, deltas.size, y.size))
-            grad[0, :, :] = (
-                pdf2 * val_expBa.reshape((-1, 1)) / s
-                + (cdf_d1 * sigma - pdf_d1 / s) * val_expC
-            )
-            return val_compB + val_compC, grad
+        return val_BC_all(model, y, sigma, s, gr=gr)
+
+
+def val_BC_1(
+    theta: np.ndarray, y: np.ndarray, sigma: float, s: float, gr: bool = False
+) -> Any:
+    """`val_BC` for one type and one contract"""
+    delta, y_0 = theta[0], y[0]
+    argu1 = delta / s + s * sigma
+    dy0s = (delta - y_0) / s
+    argu2 = dy0s + s * sigma
+    cdf1 = bs_norm_cdf(argu1)
+    cdf2 = bs_norm_cdf(argu2)
+    y0sig = sigma * y_0
+    val_expB = np.exp(sigma * (s * s * sigma / 2.0 + delta))
+    val_compB = (cdf1 - cdf2) * val_expB
+    val_expC = np.exp(y0sig)
+    cdf_d1 = bs_norm_cdf(dy0s)
+    # print(f"no gr: {y[0]=}, {theta[0]=}, {val_expC=}, {cdf_d1=}")
+    val_compC = cdf_d1 * val_expC
+    if not gr:
+        return val_compB + val_compC
+    else:
+        # print(f"{y[0]=}, {theta[0]=}")
+        pdf2 = bs_norm_pdf(argu2)
+        pdf_d1 = bs_norm_pdf(dy0s)
+        grad = np.zeros(1)
+        grad[0] = pdf2 * val_expB / s + (cdf_d1 * sigma - pdf_d1 / s) * val_expC
+        return val_compB + val_compC, grad
+
+
+def val_BC_all(
+    model: ScreeningModel, y: np.ndarray, sigma: float, s: float, gr: bool = False
+) -> Any:
+    deltas = model.theta_mat[:, 0]
+    argu1 = deltas / s + s * sigma
+    dy0s = np.subtract.outer(deltas, y) / s
+    argu2 = dy0s + s * sigma
+    cdf1a = cast(np.ndarray, bs_norm_cdf(argu1))
+    cdf2 = bs_norm_cdf(argu2)
+    y0sig = sigma * y
+    cdf_d1 = bs_norm_cdf(dy0s)
+    val_expBa = np.exp(sigma * (s * s * sigma / 2.0 + deltas))
+    val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * val_expBa.reshape((-1, 1))
+    val_expC = np.exp(y0sig)
+    val_compC = cdf_d1 * val_expC
+    if not gr:
+        return val_compB + val_compC
+    else:
+        pdf2 = bs_norm_pdf(argu2)
+        pdf_d1 = bs_norm_pdf(dy0s)
+        grad = np.zeros((1, deltas.size, y.size))
+        grad[0, :, :] = (
+            pdf2 * val_expBa.reshape((-1, 1)) / s
+            + (cdf_d1 * sigma - pdf_d1 / s) * val_expC
+        )
+    return val_compB + val_compC, grad
 
 
 def val_D(y: np.ndarray, delta: float, s: float, gr: bool = False) -> Any:
@@ -184,23 +197,36 @@ def val_I(
     check_args("val_I", y, theta)
     s = model.params[1]
     if theta is not None:
-        delta = theta
-        value_A = cast(float, val_A(delta, s))
-        value_BC = val_BC(model, y, theta=theta, gr=gr)
-        if not gr:
-            return value_BC + value_A
-        else:
-            val, grad = value_BC
-            return val + value_A, grad
+        return val_I_1(model, y, theta, s, gr=gr)
     else:
-        deltas = model.theta_mat[:, 0]
-        value_A2 = val_A(deltas, s)
-        value_BC = val_BC(model, y, gr=gr)
-        if not gr:
-            return value_BC + value_A2.reshape((-1, 1))
-        else:
-            val, grad = value_BC
-            return val + value_A2.reshape((-1, 1)), grad
+        return val_I_all(model, y, s, gr=gr)
+
+
+def val_I_1(
+    model: ScreeningModel, y: np.ndarray, theta: np.ndarray, s: float, gr: bool = False
+) -> Any:
+    """`val_I` for one type and one contract"""
+    delta = theta[0]
+    value_A = cast(float, val_A(delta, s))
+    value_BC = val_BC(model, y, theta=theta, gr=gr)
+    if not gr:
+        return value_BC + value_A
+    else:
+        val, grad = value_BC
+        return val + value_A, grad
+
+
+def val_I_all(model: ScreeningModel, y: np.ndarray, s: float, gr: bool = False) -> Any:
+    """`val_I` for all types and all contracts in `y`"""
+    deltas = model.theta_mat[:, 0]
+    values_A = val_A(deltas, s)
+    values_BC = val_BC(model, y, gr=gr)
+    if not gr:
+        obj = values_BC + values_A.reshape((-1, 1))
+        return obj
+    else:
+        vals, grad = values_BC
+        return vals + values_A.reshape((-1, 1)), grad
 
 
 def S_penalties(y: np.ndarray, gr: bool = False) -> Any:

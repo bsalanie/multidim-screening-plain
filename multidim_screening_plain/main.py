@@ -48,7 +48,7 @@ if __name__ == "__main__":
         y_init, free_y = module.create_initial_contracts(
             model, start_from_first_best, FB_y
         )
-        JLy = JLambda(model, y_init, model.theta_mat, model.params)
+        JLy = JLambda(model, y_init)
         model.initialize(y_init, free_y, JLy)
 
         it_max = int(cast(str, config["MAX_ITERATIONS"]))

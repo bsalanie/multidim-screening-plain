@@ -43,7 +43,7 @@ def b_fun(
     Args:
         model: the ScreeningModel
         y:  a `k`-vector of deductible values
-        theta: the risk of one type, if provided
+        theta: a 1-vector with the risk of one type, if provided
         gr: whether we compute the gradient
 
     Returns:
@@ -57,29 +57,52 @@ def b_fun(
     sigma = model.params[0]
     y_no_insur = np.array([20.0])
     if theta is not None:
-        value_non_insured = val_I(model, y_no_insur, theta=theta)
-        value_insured = val_I(model, y, theta=theta, gr=gr)
-        if not gr:
-            diff_logs = np.log(value_non_insured) - np.log(value_insured)
-            return diff_logs / sigma
-        else:
-            val_insured, dval_insured = value_insured
-            diff_logs = np.log(value_non_insured) - np.log(val_insured)
-            grad = -dval_insured / (val_insured * sigma)
-            return diff_logs / sigma, grad
+        return b_fun_1(model, y, y_no_insur, theta, sigma, gr=gr)
     else:
-        value_non_insured = val_I(model, y_no_insur)
-        value_insured = val_I(model, y, gr=gr)
-        if not gr:
-            diff_logs = np.log(value_non_insured) - np.log(value_insured)
-            return diff_logs / sigma
-        else:
-            val_insured, dval_insured = value_insured
-            diff_logs = np.log(value_non_insured) - np.log(val_insured)
-            denom_inv = 1.0 / (val_insured * sigma)
-            grad = np.empty((1, model.N, y.size))
-            grad[0, :, :] = -dval_insured[0, :, :] * denom_inv
-            return diff_logs / sigma, grad
+        return b_fun_all(model, y, y_no_insur, sigma, gr=gr)
+
+
+def b_fun_1(
+    model: ScreeningModel,
+    y: np.ndarray,
+    y_no_insur: np.ndarray,
+    theta: np.ndarray,
+    sigma: float,
+    gr: bool = False,
+):
+    """`b_fun` for contract `y` for type `theta"""
+    value_non_insured = val_I(model, y_no_insur, theta=theta)
+    value_insured = val_I(model, y, theta=theta, gr=gr)
+    if not gr:
+        diff_logs = np.log(value_non_insured) - np.log(value_insured)
+        return diff_logs / sigma
+    else:
+        val_insured, dval_insured = value_insured
+        diff_logs = np.log(value_non_insured) - np.log(val_insured)
+        grad = -dval_insured / (val_insured * sigma)
+        return diff_logs / sigma, grad
+
+
+def b_fun_all(
+    model: ScreeningModel,
+    y: np.ndarray,
+    y_no_insur: np.ndarray,
+    sigma: float,
+    gr: bool = False,
+):
+    """`b_fun` for all contracts in `y` and for all types"""
+    value_non_insured = val_I(model, y_no_insur)
+    value_insured = val_I(model, y, gr=gr)
+    if not gr:
+        diff_logs = np.log(value_non_insured) - np.log(value_insured)
+        return diff_logs / sigma
+    else:
+        val_insured, dval_insured = value_insured
+        diff_logs = np.log(value_non_insured) - np.log(val_insured)
+        denom_inv = 1.0 / (val_insured * sigma)
+        grad = np.empty((1, model.N, y.size))
+        grad[0, :, :] = -dval_insured[0, :, :] * denom_inv
+        return diff_logs / sigma, grad
 
 
 def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = False):
@@ -87,8 +110,8 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
 
     Args:
         model: the ScreeningModel
-        y:  a 2-vector of 1 contract `y`
-        theta: a 2-vector of characteristics of one type
+        y:  a 1-vector of 1 contract `y`
+        theta: a 1-vector of characteristics of one type
         gr: whether we compute the gradient
 
     Returns:
@@ -168,19 +191,23 @@ def create_initial_contracts(
 
 
 def proximal_operator(
-    model: ScreeningModel, z: np.ndarray, theta: np.ndarray, t: float | None = None
+    model: ScreeningModel,
+    theta: np.ndarray,
+    z: np.ndarray | None = None,
+    t: float | None = None,
 ) -> np.ndarray | None:
     """Proximal operator of `-t S_i` at `z`;
-        minimizes `-S_i(y) + 1/(2 t)  ||y-z||^2`
+        minimizes `-S_i(y) + 1/(2 t)  ||y-z||^2` if `t` and `z` are given
+        otherwise, maximizes `S_i(y)`
 
     Args:
         model: the ScreeningModel
-        z: an `m`-vector
+        z: a `1`-vector, if any
         theta: type `i`'s characteristics, a `1`-vector
-        t: the step; if None, we maximize `S_i(y)`
+        t: the step, if any
 
     Returns:
-        the minimizing `y`, a 1-vector
+        the optimized `y`, a 1-vector
     """
 
     def prox_obj_and_grad(
