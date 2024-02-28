@@ -5,7 +5,6 @@ and two-dimensional contracts  (y0=deductible, y1=proportional copay)
 from pathlib import Path
 from typing import cast
 
-import numpy as np
 import pandas as pd
 from dotenv import dotenv_values
 
@@ -32,12 +31,13 @@ if __name__ == "__main__":
     start_from_current = not start_from_first_best
     do_plots = config["DO_PLOTS"] == "True"
 
-    FB_y = np.empty((model.N, model.m))
     if do_first_best:
         # First let us look at the first best: we choose $y_i$ to maximize $S_i$ for each $i$.
         FB_y = get_first_best(model)
     else:
-        FB_y = pd.read_csv(cast(Path, model.resdir) / "first_best_contracts.csv").values
+        FB_y = pd.read_csv(
+            cast(Path, model.resdir) / "first_best_contracts.csv"
+        ).values.reshape((model.N, model.m))
 
     model.add_first_best(FB_y)
 

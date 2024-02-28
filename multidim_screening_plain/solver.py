@@ -244,8 +244,8 @@ def prox_minusS(
     list_working = [
         [
             model,
-            np.array([z[k * N + i] for k in range(m)]),
             theta_mat[i, :],
+            np.array([z[k * N + i] for k in range(m)]),
             tau * f[i],
         ]
         for i in working_i0
@@ -364,14 +364,13 @@ def solve(
     tau = 1.0 / (sqrt(stepratio) * model.norm_Lambda) / mult_fac
     sig = sqrt(stepratio) / model.norm_Lambda / mult_fac
 
-    JLy = JLambda(model, y)
-    LTv = make_LTv(v.reshape((N, N)), JLy)
-
     # loop
     lamb = np.zeros(N)
     y_old = y.copy()
     v_old = v
-    LTv_old = LTv
+    JLy = JLambda(model, y)
+    LTv_old = make_LTv(v.reshape((N, N)), JLy)
+
     while it < it_max and not criteria.all():
         it += 1
         # primal update

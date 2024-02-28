@@ -1,0 +1,10 @@
+N = 49, tau = 2.47e-02, sig = 2.47e-02, step ratio = 1.0, primal tol = 9.90e-05, dual tol = 4.90e-04
+s = 4.0, loading = 0.25
+convergence = False, iterations = 100000, elapsed time = 2:00:52.816507
+primal residual = 2.59e-01 tol,  dual residual = 1.60e+01 tol
+
+N = 49, tau = 2.46e-02, sig = 2.46e-02, step ratio = 1.0, primal tol = 9.90e-05, dual tol = 4.90e-04
+s = 4.0, loading = 0.25
+convergence = False, iterations = 1000, elapsed time = 0:00:58.885658
+primal residual = 7.44e+00 tol,  dual residual = 2.28e+02 tol
+

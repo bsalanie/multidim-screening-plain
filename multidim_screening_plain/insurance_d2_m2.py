@@ -200,15 +200,18 @@ def create_initial_contracts(
 
 
 def proximal_operator(
-    model: ScreeningModel, z: np.ndarray, theta: np.ndarray, t: float | None = None
+    model: ScreeningModel,
+    theta: np.ndarray,
+    z: np.ndarray | None = None,
+    t: float | None = None,
 ) -> np.ndarray | None:
     """Proximal operator of `-t S_i` at `z`;
         minimizes `-S_i(y) + 1/(2 t)  ||y-z||^2`
 
     Args:
         model: the ScreeningModel
-        z: an `m`-vector
         theta: type `i`'s characteristics, a `d`-vector
+        z: a `2`-vector for a type, if any
         t: the step; if None, we maximize `S_i(y)`
 
     Returns:
