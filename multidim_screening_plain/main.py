@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
         # print(model)
 
-        print(results)
+        # print(results)
 
     if do_plots:
         module.plot_results(model)

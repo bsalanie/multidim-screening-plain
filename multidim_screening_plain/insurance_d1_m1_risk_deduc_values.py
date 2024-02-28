@@ -32,7 +32,7 @@ def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
     return argu * bs_norm_cdf(argu) + bs_norm_pdf(argu)
 
 
-def check_args(function_name: str, y: Any, theta: Any) -> None:
+def check_args(function_name: str, y: Any, theta: Any | None = None) -> None:
     """check the arguments passed"""
     if theta is not None:
         if not isinstance(theta, np.ndarray) or theta.shape != (1,):

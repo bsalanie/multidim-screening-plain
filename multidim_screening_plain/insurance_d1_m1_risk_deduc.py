@@ -166,26 +166,22 @@ def create_initial_contracts(
         model_resdir = cast(Path, model.resdir)
         y_init = np.loadtxt(model_resdir / "current_y.txt")
         EPS = 0.001
-        set_not_insured = {i for i in range(N) if y_init[i, 1] > 1.0 - EPS}
+        set_not_insured = {i for i in range(N) if y_init[i] > 15.0 - EPS}
         set_fixed_y = set_not_insured
+        print(f"{set_fixed_y=}")
 
         set_free_y = set(range(N)).difference(set_fixed_y)
-        list(set_fixed_y)
+        fixed_y = list(set_fixed_y)
         free_y = list(set_free_y)
-        not_insured = list(set_not_insured)
-        # only_deductible = list(set_only_deductible)
-        rng = np.random.default_rng(645)
 
-        MIN_Y0, MAX_Y0 = 0.3, np.inf
-        MIN_Y1, MAX_Y1 = 0.0, np.inf
+        MIN_Y0, MAX_Y0 = 0.0, np.inf
         y_init = cast(np.ndarray, y_init)
         perturbation = 0.001
-        yinit_0 = np.clip(y_init[:, 0] + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
-        yinit_1 = np.clip(y_init[:, 1] + rng.normal(0, perturbation, N), MIN_Y1, MAX_Y1)
-        yinit_0[not_insured] = 0.0
-        yinit_1[not_insured] = 1.0
+        rng = np.random.default_rng(645)
+        y_init = np.clip(y_init + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
+        y_init[fixed_y] = 20.0
 
-        y_init = cast(np.ndarray, np.concatenate((yinit_0, yinit_1)))
+        y_init = cast(np.ndarray, y_init)
 
     return y_init, free_y
 
@@ -197,7 +193,7 @@ def proximal_operator(
     t: float | None = None,
 ) -> np.ndarray | None:
     """Proximal operator of `-t S_i` at `z`;
-        minimizes `-S_i(y) + 1/(2 t)  ||y-z||^2` if `t` and `z` are given
+        minimizes `-S_i(y) + 1/(2 t)  ||y-z||^2` if `z` and `t` are given
         otherwise, maximizes `S_i(y)`
 
     Args:
@@ -209,6 +205,8 @@ def proximal_operator(
     Returns:
         the optimized `y`, a 1-vector
     """
+    # if t is not None:
+    # print(f"{theta=}, {z=}, {t=}")
 
     def prox_obj_and_grad(
         y: np.ndarray, args: list, gr: bool = False
@@ -238,8 +236,9 @@ def proximal_operator(
 
     y_init = np.array([1.0]) if t is None else z
 
-    # check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
-    # bs_error_abort("done")
+    # if t is not None:
+    #     check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
+    #     bs_error_abort("done")
 
     mini = minimize_free(
         prox_obj,
@@ -268,7 +267,7 @@ def add_results(
     model = results.model
     N = model.N
     theta_mat = model.theta_mat
-    s = model.params[0]
+    s = model.params[1]
 
     FB_y = model.FB_y
     SB_y = results.SB_y

@@ -110,20 +110,6 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
     return cast(np.ndarray, y_first)
 
 
-# def make_v(w: np.ndarray, beta: np.ndarray) -> np.ndarray:
-#     """computes $v_{ij} = \\max(w_{ij}-\beta_i +\beta_j, 0)$
-
-#     Args:
-#         w: an `(N,N)` matrix
-#         beta: an `N`-vector
-
-#     Returns:
-#         v: an `(N,N)` matrix
-#     """
-#     dbeta = D_mul(beta)
-#     return cast(np.ndarray, np.clip(w - dbeta, 0.0, np.inf))
-
-
 def D_mul(v: np.ndarray) -> np.ndarray:
     """computes $D v$
 
@@ -252,7 +238,7 @@ def prox_minusS(
     ]
     n_working = len(list_working)
 
-    y = y_current
+    y = y_current.copy()
     if fix_top:
         # we fix the second-best at the first-best at the top
         for k in range(m):
@@ -346,8 +332,7 @@ def solve(
     model.rescale_step(mult_fac)
 
     _, gamma_proj = construct_D(N)
-    t_start = timer()
-    it = 0
+
     criteria = np.array([False, False, False])
     rec_primal_residual = []
     rec_dual_residual = []
@@ -366,13 +351,18 @@ def solve(
 
     # loop
     lamb = np.zeros(N)
-    y_old = y.copy()
-    v_old = v
     JLy = JLambda(model, y)
-    LTv_old = make_LTv(v.reshape((N, N)), JLy)
+    LTv = make_LTv(v.reshape((N, N)), JLy)
 
+    t_start = timer()
+    it = 0
     while it < it_max and not criteria.all():
         it += 1
+        y_old = y.copy()
+        v_old = v.copy()
+        LTv_old = LTv.copy()
+        # print(f"{LTv_old=}")
+        lamb_old = lamb
         # primal update
         y = prox_minusS(
             model,
@@ -382,6 +372,7 @@ def solve(
             fix_top=fix_top,
             free_y=model.free_y,
         )
+        # print(f"{npmaxabs(y - y_old)=}")
         # dual update
         y_bar = y + t_acc * (y - y_old)
         Ly_bar = nlLambda(model, y_bar).reshape(N2)
@@ -389,13 +380,16 @@ def solve(
             tuple[np.ndarray, np.ndarray, np.ndarray, int, int],
             proj_K(
                 model,
-                v + sig * Ly_bar,
-                lamb,
+                v_old + sig * Ly_bar,
+                lamb_old,
                 gamma_proj,
                 warmstart=warmstart,
             ),
         )
         v, lamb, IR_binding, n_it_proj, proj_converged = proj_res
+        # print(f"{npmaxabs(v - v_old)=}")
+        # bs_error_abort("stop")
+        # Ly = nlLambda(model, y).reshape(N2)
         Ly = nlLambda(model, y).reshape(N2)
         JLy = JLambda(model, y)
         LTv = make_LTv(v.reshape((N, N)), JLy)
@@ -414,6 +408,7 @@ def solve(
             ]
         )
         y_mat = contracts_matrix(y, N)
+        v_mat = v.reshape((N, N))
         if it % 20 == 0 and log:
             print("\n\ty is:")
             print_matrix(y_mat)
@@ -421,13 +416,13 @@ def solve(
                 cast(Path, model.resdir) / "current_y.txt",
                 np.round(y_mat, 6),
             )
+            np.savetxt(
+                cast(Path, model.resdir) / "current_v.txt",
+                np.round(v_mat, 6),
+            )
             print(f"\n\t\t\t{criteria=} at {it=}\n")
             print(f"\t\t\t\tprimal: {rec_primal_residual[-1] / tol_primal: > 10.2f}")
             print(f"\t\t\t\tdual: {rec_dual_residual[-1] / tol_dual: > 10.2f}")
-        y_old = y
-        v_old = v
-        LTv_old = LTv
-
     # end
     elapsed = timer() - t_start
 

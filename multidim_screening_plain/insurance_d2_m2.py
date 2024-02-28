@@ -195,6 +195,7 @@ def create_initial_contracts(
         yinit_1[not_insured] = 1.0
 
         y_init = cast(np.ndarray, np.concatenate((yinit_0, yinit_1)))
+        model.v0 = np.loadtxt(model_resdir / "current_v.txt")
 
     return y_init, free_y
 

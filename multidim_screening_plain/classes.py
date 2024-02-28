@@ -9,6 +9,8 @@ import pandas as pd
 import scipy.linalg as spla
 from bs_python_utils.bsnputils import check_matrix, check_vector
 from bs_python_utils.bsutils import bs_error_abort
+from rich.console import Console
+from rich.table import Table
 
 from multidim_screening_plain.utils import contracts_matrix, print_matrix
 
@@ -183,13 +185,36 @@ class ScreeningResults:
             ):
                 df_output[name] = res.round(3)
 
-        with pd.option_context(  # 'display.max_rows', None,
-            "display.max_columns",
-            None,
-            "display.precision",
-            3,
-        ):
-            print(df_output)
+        # with pd.option_context(  # 'display.max_rows', None,
+        #     "display.max_columns",
+        #     None,
+        #     "display.precision",
+        #     3,
+        # ):
+        #     print(df_output)
+
+        console = Console()
+        console.print("\n" + "-" * 80 + "\n", style="bold blue")
+
+        table = Table(title="Optimal contracts for insurance_d1_m1_risk_deduc")
+        table.add_column("Risk", justify="center", style="cyan", no_wrap=True)
+        table.add_column("1B deductible", justify="center", style="blue", no_wrap=True)
+        table.add_column("2B deductible", justify="center", style="green", no_wrap=True)
+        table.add_column("1B surplus", justify="center", style="red", no_wrap=True)
+        table.add_column("2B surplus", justify="center", style="blue", no_wrap=True)
+        table.add_column("Info. rent", justify="center", style="black", no_wrap=True)
+
+        for t in df_output.itertuples():
+            table.add_row(
+                f"{t.theta_0: > 8.3f}",
+                f"{t.FB_y_0: > 8.3f}",
+                f"{t.y_0: > 8.3f}",
+                f"{t.FB_surplus: > 8.3f}",
+                f"{t.SB_surplus: > 8.3f}",
+                f"{t.info_rents: > 8.3f}",
+            )
+
+        console.print(table)
 
         model_resdir = cast(Path, model.resdir)
         df_output[y_columns].to_csv(
@@ -226,5 +251,4 @@ class ScreeningResults:
                 clstr += f"{self.SB_y[i, k]: >8.3f} "
             clstr += "\n"
 
-        return clstr + "\n"
         return clstr + "\n"
