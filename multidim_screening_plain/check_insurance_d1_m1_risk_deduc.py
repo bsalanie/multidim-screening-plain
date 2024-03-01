@@ -6,9 +6,12 @@ This has type=risk, contract=deductible.
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from bs_python_utils.bs_opt import minimize_free
 from dotenv import dotenv_values
 from insurance_d1_m1_risk_deduc_values import val_I
+from rich.console import Console
+from rich.table import Table
 
 from multidim_screening_plain.classes import ScreeningModel
 from multidim_screening_plain.setup import setup_model
@@ -25,7 +28,7 @@ N = model.N
 sigma = model.params[0]
 
 
-def v_fun(y, args, gr=False):
+def w_fun(y, args, gr=False):
     theta, theta1, i = args
     S_vals = S_fun(model, y, theta=theta, gr=gr)
     I_vals = val_I(model, y, theta=theta, gr=gr)
@@ -38,40 +41,85 @@ def v_fun(y, args, gr=False):
         CE_val1 = -np.log(I_val1) / sigma
         CE_grad = -I_grad / (I_val * sigma)
         CE_grad1 = -I_grad1 / (I_val1 * sigma)
-        return -S_val + (N - 1 - i) * (CE_val - CE_val1), -S_grad + (N - 1 - i) * (
+        return -S_val - (N - 1 - i) * (CE_val - CE_val1), -S_grad - (N - 1 - i) * (
             CE_grad - CE_grad1
         )
     else:
         CE_val = -np.log(I_vals) / sigma
         CE_val1 = -np.log(I_vals1) / sigma
-        return -S_vals + (N - 1 - i) * (CE_val - CE_val1)
+        return -S_vals - (N - 1 - i) * (CE_val - CE_val1)
 
 
-def v_grad(y, args):
-    return v_fun(y, args, gr=True)[1]
+def w_grad(y, args):
+    return w_fun(y, args, gr=True)[1]
 
 
 thetas = model.theta_mat
 y0 = np.array([1.0])
-args = [thetas[7], thetas[8], 7]
-# check_gradient_scalar_function(v_fun, y0, args)
+y_no_insurance = np.array([20.0])
+# args = [thetas[7], thetas[8], 7]
+# check_gradient_scalar_function(w_fun, y0, args)
 
 
 def compute_second_best(model: ScreeningModel) -> np.ndarray:
-    y_second = np.zeros((N, 1))
+    y_second = np.zeros(N)
+    w_second = np.zeros(N)
     args = [thetas[-1, :], thetas[-1, :], N - 1]
-    res = minimize_free(v_fun, v_grad, y0, args)
-    y_second[-1] = res.x
-    for j in range(N - 2, -1, -1):
-        args = [thetas[j, :], thetas[j + 1, :], j]
-        res = minimize_free(v_fun, v_grad, y0, args)
-        if v_fun(res.x, args) > 0.0:
-            y_second[j, 0] = res.x
-        else:
-            y_second[:j, 0] = 10.0
+    res = minimize_free(w_fun, w_grad, y0, args)
+    y_second[-1] = res.x[0]
+    w_second[-1] = res.fun
+    for k in range(N - 2, -1, -1):
+        args = [thetas[k, :], thetas[k + 1, :], k]
+        res = minimize_free(w_fun, w_grad, y0, args)
+        y_second[k] = res.x[0]
+        w_second[k] = res.fun
+
+    CE_no_insur = np.zeros(N)
+    for j in range(N):
+        CE_no_insur[j] = -np.log(val_I(model, y_no_insurance, thetas[j, :])) / sigma
+
+    for j in range(N - 1, 0, -1):
+        print(f"{j=}: {y_second[j]=}")
+        dw = w_second[j] - CE_no_insur[j]
+        print(f"{dw=}")
+        if dw < 0:
+            y_second[: (j + 1)] = 20.0
             break
-    return y_second
+
+    return y_second, w_second, CE_no_insur
 
 
-y_second = compute_second_best(model)
-print(y_second)
+y_second, w_second, CE_no_insur = compute_second_best(model)
+
+y_algorithm = (
+    pd.read_csv(model.resdir / "second_best_contracts.csv", header=None)
+    .values[1:]
+    .flatten()
+    .astype(float)
+)
+
+print(y_algorithm)
+
+console = Console()
+
+console.print("\n" + "-" * 80 + "\n", style="bold blue")
+
+table = Table(title="Checking the second-best for insurance_d1_m1_risk_deduc")
+table.add_column("Deductible (algorithm)", justify="center", style="blue", no_wrap=True)
+table.add_column(
+    "Deductible (direct calculation)", justify="center", style="red", no_wrap=True
+)
+table.add_column("Gross virtual surplus", justify="center", style="blue", no_wrap=True)
+table.add_column("Reservation value", justify="center", style="green", no_wrap=True)
+
+for y_algo, y, w, zero in zip(
+    y_algorithm, y_second, w_second, CE_no_insur, strict=True
+):
+    table.add_row(
+        f"{y_algo: > 8.3f}",
+        f"{y: > 8.3f}",
+        f"{w: > 8.3f}",
+        f"{zero: > 8.3f}",
+    )
+
+console.print(table)
