@@ -22,37 +22,37 @@ from multidim_screening_plain.insurance_d2_m2_values import (
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
-    val_A,
     val_D,
     val_I,
 )
 from multidim_screening_plain.utils import (
-    bs_norm_cdf,
     contracts_vector,
     display_variable,
     plot_constraints,
     plot_y_range,
 )
 
-
-def precalculate(model: ScreeningModel) -> None:
-    theta_mat = model.theta_mat
-    sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-    s = model.params[0]
-    values_A = val_A(deltas, s)
-    sigmas_s = s * sigmas
-    argu1 = deltas / s + sigmas_s
-    cdf1 = bs_norm_cdf(argu1)
-    val_expB = np.exp(sigmas * (s * sigmas_s / 2.0 + deltas))
-    model.precalculated_values = {
-        "values_A": cast(np.ndarray, values_A),
-        "argu1": cast(np.ndarray, argu1),
-        "cdf1": cast(np.ndarray, cdf1),
-        "val_expB": cast(np.ndarray, val_expB),
-    }
-    y_no_insurance = np.array([0.0, 1.0])
-    I_no_insurance = val_I(model, y_no_insurance)  # [:, 0]
-    model.precalculated_values["I_no_insurance"] = cast(np.ndarray, I_no_insurance)
+######
+###### this was a failed attempt to save execution time
+######
+# def precalculate(model: ScreeningModel) -> None:
+#     theta_mat = model.theta_mat
+#     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
+#     s = model.params[0]
+#     values_A = val_A(deltas, s)
+#     sigmas_s = s * sigmas
+#     argu1 = deltas / s + sigmas_s
+#     cdf1 = bs_norm_cdf(argu1)
+#     val_expB = np.exp(sigmas * (s * sigmas_s / 2.0 + deltas))
+#     model.precalculated_values = {
+#         "values_A": cast(np.ndarray, values_A),
+#         "argu1": cast(np.ndarray, argu1),
+#         "cdf1": cast(np.ndarray, cdf1),
+#         "val_expB": cast(np.ndarray, val_expB),
+#     }
+#     y_no_insurance = np.array([0.0, 1.0])
+#     I_no_insurance = val_I(model, y_no_insurance)  # [:, 0]
+#     model.precalculated_values["I_no_insurance"] = cast(np.ndarray, I_no_insurance)
 
 
 def b_fun(

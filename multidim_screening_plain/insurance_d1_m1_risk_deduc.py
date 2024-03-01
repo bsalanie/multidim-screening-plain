@@ -8,11 +8,8 @@ from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_plots import (
-    # plot_best_contracts,
     plot_calibration,
-    plot_contract_models,
-    plot_contract_risk,
-    # plot_second_best_contracts,
+    plot_deductible_models,
     plot_utilities,
 )
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
@@ -24,12 +21,7 @@ from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
     val_D,
     val_I,
 )
-from multidim_screening_plain.utils import (
-    contracts_vector,
-    display_variable,
-    plot_constraints,
-    plot_y_range,
-)
+from multidim_screening_plain.utils import contracts_vector
 
 
 def b_fun(
@@ -166,7 +158,7 @@ def create_initial_contracts(
         model_resdir = cast(Path, model.resdir)
         y_init = np.loadtxt(model_resdir / "current_y.txt")
         EPS = 0.001
-        set_not_insured = {i for i in range(N) if y_init[i] > 15.0 - EPS}
+        set_not_insured = {i for i in range(N) if y_init[i] > 10.0 - EPS}
         set_fixed_y = set_not_insured
         print(f"{set_fixed_y=}")
 
@@ -179,7 +171,7 @@ def create_initial_contracts(
         perturbation = 0.001
         rng = np.random.default_rng(645)
         y_init = np.clip(y_init + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
-        y_init[fixed_y] = 20.0
+        y_init[fixed_y] = 10.0
 
         y_init = cast(np.ndarray, y_init)
 
@@ -328,20 +320,11 @@ def plot_results(model: ScreeningModel) -> None:
     # first plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
 
-    display_variable(
-        df_all_results,
-        variable="First-best deductible",
-        cmap="viridis",
-        path=model_plotdir + "/first_best_deduc",
-    )
-
     df_contracts = df_all_results[
         [
-            "Risk-aversion",
             "Risk location",
             "First-best deductible",
             "Second-best deductible",
-            "Second-best copay",
         ]
     ]
 
@@ -350,7 +333,6 @@ def plot_results(model: ScreeningModel) -> None:
             "Model": np.concatenate(
                 (np.full(model.N, "First-best"), np.full(model.N, "Second-best"))
             ),
-            "Risk-aversion": np.tile(df_contracts["Risk-aversion"].values, 2),
             "Risk location": np.tile(df_contracts["Risk location"].values, 2),
             "Deductible": np.concatenate(
                 (
@@ -361,40 +343,7 @@ def plot_results(model: ScreeningModel) -> None:
         }
     )
 
-    plot_contract_models(
-        df_first_and_second, "Deductible", path=model_plotdir + "/deducs_models"
-    )
-
-    plot_contract_risk(
-        df_first_and_second,
-        "Deductible",
-        path=model_plotdir + "/deducs_risk",
-    )
-
-    df_first_and_second.query('Model == "Second-best"')
-    # plot_copays(df_second, path=model_plotdir + "/copays")
-
-    # plot_best_contracts(
-    #     df_first_and_second,
-    #     path=model_plotdir + "/optimal_contracts",
-    # )
-
-    plot_y_range(df_first_and_second, path=model_plotdir + "/y_range")
-
-    # plot_second_best_contracts(
-    #     df_second,
-    #     title="Second-best contracts",
-    #     cmap="viridis",
-    #     path=model_plotdir + "/second_best_contracts",
-    # )
-
-    IR_binds = np.loadtxt(model_resdir / "IR_binds.txt").astype(int).tolist()
-
-    IC_binds = np.loadtxt(model_resdir / "IC_binds.txt").astype(int).tolist()
-
-    plot_constraints(
-        df_all_results, IR_binds, IC_binds, path=model_plotdir + "/constraints"
-    )
+    plot_deductible_models(df_first_and_second, path=model_plotdir + "/deducs_models")
 
     plot_utilities(
         df_all_results,

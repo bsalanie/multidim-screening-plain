@@ -409,7 +409,7 @@ def solve(
         )
         y_mat = contracts_matrix(y, N)
         v_mat = v.reshape((N, N))
-        if it % 20 == 0 and log:
+        if it % 100 == 0 and log:
             print("\n\ty is:")
             print_matrix(y_mat)
             np.savetxt(
