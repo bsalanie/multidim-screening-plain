@@ -17,8 +17,11 @@ from multidim_screening_plain.solver import (
 )
 
 if __name__ == "__main__":
+    config_file = "insurance_d2_m1_deduc"
     # load configuration
-    config = dotenv_values(Path.cwd() / "multidim_screening_plain" / "config.env")
+    config = dotenv_values(
+        Path.cwd() / "multidim_screening_plain" / f"config_{config_file}.env"
+    )
     model = setup_model(config)
     module = model.model_module
     # module.precalculate(model)

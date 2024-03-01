@@ -11,7 +11,6 @@ from bs_python_utils.bsutils import bs_error_abort
 results_dir = Path.cwd() / "results"
 plots_dir = Path.cwd() / "plots"
 
-
 INV_SQRT_2 = np.sqrt(0.5)
 INV_SQRT_2PI = 1.0 / np.sqrt(2 * np.pi)
 

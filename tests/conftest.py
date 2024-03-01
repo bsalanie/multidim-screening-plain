@@ -8,6 +8,9 @@ from multidim_screening_plain.setup import setup_model
 
 @fixture
 def build_model():
-    config = dotenv_values(Path.cwd() / "multidim_screening_plain" / "config.env")
+    config_file = "insurance_d2_m1_deduc"
+    config = dotenv_values(
+        Path.cwd() / "multidim_screening_plain" / f"config_{config_file}.env"
+    )
     model = setup_model(config)
     return model

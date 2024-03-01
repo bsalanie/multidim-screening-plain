@@ -1,0 +1,40 @@
+N = 16, tau = 9.02e-01, sig = 9.02e-01, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 17468, elapsed time = 0:01:03.332388
+primal residual = 1.00e+00 tol,  dual residual = 1.25e-01 tol
+
+N = 16, tau = 9.02e-01, sig = 9.02e-01, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 17468, elapsed time = 0:01:04.285209
+primal residual = 1.00e+00 tol,  dual residual = 1.25e-01 tol
+
+N = 16, tau = 1.10e+00, sig = 1.10e+00, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 362, elapsed time = 0:00:00.424239
+primal residual = 8.54e-01 tol,  dual residual = 9.66e-01 tol
+
+N = 16, tau = 1.09e+00, sig = 1.09e+00, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 63, elapsed time = 0:00:00.079758
+primal residual = 9.21e-01 tol,  dual residual = 8.56e-01 tol
+
+N = 16, tau = 1.09e+00, sig = 1.09e+00, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 63, elapsed time = 0:00:00.080433
+primal residual = 9.21e-01 tol,  dual residual = 8.56e-01 tol
+
+N = 16, tau = 1.09e+00, sig = 1.09e+00, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 63, elapsed time = 0:00:00.080982
+primal residual = 9.21e-01 tol,  dual residual = 8.56e-01 tol
+
+N = 16, tau = 1.09e+00, sig = 1.09e+00, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 63, elapsed time = 0:00:00.081051
+primal residual = 9.21e-01 tol,  dual residual = 8.56e-01 tol
+
+N = 16, tau = 1.09e+00, sig = 1.09e+00, step ratio = 1.0, primal tol = 4.00e-05, dual tol = 1.60e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 63, elapsed time = 0:00:00.080656
+primal residual = 9.21e-01 tol,  dual residual = 8.56e-01 tol
+

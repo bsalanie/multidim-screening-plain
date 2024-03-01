@@ -77,18 +77,20 @@ def plot_utilities(
                 "Risk location:Q",
                 scale=alt.Scale(domain=set_axis(df2["Risk location"].values)),
             ),
-            y=alt.Y("sum(value)"),
+            y=alt.Y("value"),
             color=alt.Color("variable", scale=our_colors),
-            xOffset="variable:N",
         )
+        .facet(facet="variable:N", columns=3)
     )
+    if title:
+        ch.properties(title=title)
     _maybe_save(ch, path)
 
 
 def plot_deductible_models(
     df_first_and_second: pd.DataFrame, path: str | None = None, **kwargs
 ) -> alt.Chart:
-    """plots the deuctible for both first and second best
+    """plots the deductible for both first and second best
     as a function of risk.
 
     Args:
@@ -100,8 +102,8 @@ def plot_deductible_models(
     Returns:
         the two interactive scatterplots.
     """
-    # discard y1 = 1
     df = df_first_and_second
+    df["Deductible"] = df["Deductible"].apply(lambda x: min(x, 5.0))
     base = alt.Chart().encode(
         x=alt.X(
             "Risk location:Q",

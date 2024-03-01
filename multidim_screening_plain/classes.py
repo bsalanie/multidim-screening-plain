@@ -87,7 +87,7 @@ class ScreeningModel:
     def initialize(self, y_init: np.ndarray, free_y: list, JLy: np.ndarray):
         self.y_init = y_init
         self.free_y = free_y
-        self.norm_Lambda = max([spla.svdvals(JLy[i, :, :])[0] for i in range(self.d)])
+        self.norm_Lambda = max([spla.svdvals(JLy[i, :, :])[0] for i in range(self.m)])
         print("\n Free contracts in y_init:")
         print(free_y)
         print("\n Initial contracts:")
@@ -152,7 +152,7 @@ class ScreeningResults:
     def output_results(self) -> None:
         """prints the optimal contracts, and saves the results in a dataframe."""
         model = self.model
-        theta_mat, y_mat = model.theta_mat, self.SB_y
+        y_mat = self.SB_y
         df_output = pd.DataFrame(
             {
                 "theta_0": model.theta_mat[:, 0],
@@ -163,22 +163,25 @@ class ScreeningResults:
                 "info_rents": self.info_rents,
             }
         )
-        d, m = theta_mat.shape[1], y_mat.shape[1]
-        for i in range(d):
+        d, m = model.d, model.m
+        for i in range(1, d):
             df_output[f"theta_{i}"] = model.theta_mat[:, i]
-        for i in range(m):
+        for i in range(1, m):
             df_output[f"y_{i}"] = y_mat[:, i]
             df_output[f"FB_y_{i}"] = model.FB_y[:, i]
 
         FB_y_columns = [f"FB_y_{i}" for i in range(m)]
         y_columns = [f"y_{i}" for i in range(m)]
-        theta_columns = [f"theta_{i}" for i in range(m)]
+        theta_columns = [f"theta_{i}" for i in range(d)]
         df_output = df_output[
             theta_columns
             + FB_y_columns
             + y_columns
             + ["FB_surplus", "SB_surplus", "info_rents"]
         ]
+
+        print(f"{d=}, {m=}")
+        print(df_output.columns)
         if self.additional_results and self.additional_results_names:
             for name, res in zip(
                 self.additional_results_names, self.additional_results, strict=True
@@ -196,8 +199,9 @@ class ScreeningResults:
         console = Console()
         console.print("\n" + "-" * 80 + "\n", style="bold blue")
 
-        table = Table(title="Optimal contracts for insurance_d1_m1_risk_deduc")
-        table.add_column("Risk", justify="center", style="cyan", no_wrap=True)
+        table = Table(title=f"Optimal contracts for {model.model_id}")
+        table.add_column("Risk-aversion", justify="center", style="blue", no_wrap=True)
+        table.add_column("Risk", justify="center", style="green", no_wrap=True)
         table.add_column("1B deductible", justify="center", style="blue", no_wrap=True)
         table.add_column("2B deductible", justify="center", style="green", no_wrap=True)
         table.add_column("1B surplus", justify="center", style="red", no_wrap=True)
@@ -207,6 +211,7 @@ class ScreeningResults:
         for t in df_output.itertuples():
             table.add_row(
                 f"{t.theta_0: > 8.3f}",
+                f"{t.theta_1: > 8.3f}",
                 f"{t.FB_y_0: > 8.3f}",
                 f"{t.y_0: > 8.3f}",
                 f"{t.FB_surplus: > 8.3f}",

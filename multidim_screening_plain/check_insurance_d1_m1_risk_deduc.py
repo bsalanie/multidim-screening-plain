@@ -1,4 +1,4 @@
-"""We compute the solution for a 1-dimensionsal model directly as a check.
+"""We compute the solution for a 1-dimensional model directly as a check.
 This has type=risk, contract=deductible.
 """
 

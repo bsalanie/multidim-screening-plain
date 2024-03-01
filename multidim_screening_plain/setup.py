@@ -24,7 +24,6 @@ from multidim_screening_plain.classes import ScreeningModel
 from multidim_screening_plain.utils import (
     make_grid,
     parse_string,
-    plots_dir,
     results_dir,
 )
 
@@ -40,7 +39,9 @@ def setup_model(model_config: dict) -> ScreeningModel:
     Returns:
         the `ScreeningModel` object
     """
-    model_name = cast(str, model_config["MODEL_NAME"])
+    model_type = cast(str, model_config["MODEL_TYPE"])
+    model_instance = cast(str, model_config["MODEL_INSTANCE"])
+    model_name = f"{model_type}_{model_instance}"
     print_stars(f"Running model {model_name}")
 
     # first we deal with the types
@@ -89,10 +90,11 @@ def setup_model(model_config: dict) -> ScreeningModel:
     )
 
     suffix = ""
-    case = f"N{N}{suffix}"
-    model_id = f"{model_name}_{case}"
-    resdir = mkdir_if_needed(results_dir / model_id)
-    plotdir = mkdir_if_needed(plots_dir / model_id)
+    model_id = f"{model_name}_{str_dims_grid}{suffix}"
+    resdir = mkdir_if_needed(results_dir / model_type / model_instance / model_id)
+    plotdir = mkdir_if_needed(resdir / "plots")
+    print(f"\nResults will be saved in {resdir}")
+    print(f"Plots will be saved in {plotdir}\n")
 
     # model parameters
     n_params = int(cast(str, model_config["NUMBER_PARAMETERS"]))
