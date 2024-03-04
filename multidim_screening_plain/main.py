@@ -24,7 +24,6 @@ if __name__ == "__main__":
     )
     model = setup_model(config)
     module = model.model_module
-    # module.precalculate(model)
 
     print(model)
 

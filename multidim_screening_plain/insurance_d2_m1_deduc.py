@@ -29,7 +29,7 @@ from multidim_screening_plain.utils import (
     display_variable,
 )
 
-######
+###
 ###### this was a failed attempt to save execution time
 ######
 # def precalculate(model: ScreeningModel) -> None:

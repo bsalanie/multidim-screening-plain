@@ -27,8 +27,6 @@ def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
     Returns:
         an object of the same type and shape
     """
-    # return argu * n01_cdf_mat(argu) + n01_pdf_mat(argu)
-    # return argu * norm.cdf(argu) + norm.pdf(argu)
     return argu * bs_norm_cdf(argu) + bs_norm_pdf(argu)
 
 
