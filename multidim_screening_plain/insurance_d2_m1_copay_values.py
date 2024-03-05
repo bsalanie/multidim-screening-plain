@@ -87,7 +87,7 @@ def val_BC(
         If `gr` is `True`, we also return the derivatives wrt `y`.
     """
     check_args("val_BC", y, theta)
-    s = model.params[0]
+    s = cast(np.ndarray, model.params)[0]
     if theta is not None:
         y_1 = y[0]
         sigma, delta = theta[0], theta[1]
@@ -168,7 +168,7 @@ def val_I(
     # precalculated_values = model.precalculated_values
     if theta is not None:
         delta = theta[1]
-        s = model.params[0]
+        s = cast(np.ndarray, model.params)[0]
         value_A = cast(float, val_A(delta, s))
         value_BC = val_BC(model, y, theta=theta, gr=gr)
         if not gr:
@@ -179,7 +179,7 @@ def val_I(
     else:
         # value_A2 = cast(np.ndarray, precalculated_values["values_A"])
         deltas = model.theta_mat[:, 1]
-        s = model.params[0]
+        s = cast(np.ndarray, model.params)[0]
         value_A2 = cast(np.ndarray, val_A(deltas, s))
         value_BC = val_BC(model, y, gr=gr)
         if not gr:

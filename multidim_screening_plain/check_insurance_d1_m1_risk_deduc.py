@@ -4,12 +4,13 @@ This has type=risk, contract=deductible.
 
 
 from pathlib import Path
-
+from typing import cast
 import numpy as np
 import pandas as pd
 from bs_python_utils.bs_opt import minimize_free
+from bs_python_utils.bsnputils import ThreeArrays
 from dotenv import dotenv_values
-from insurance_d1_m1_risk_deduc_values import val_I
+from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import val_I
 from rich.console import Console
 from rich.table import Table
 
@@ -25,7 +26,7 @@ module = model.model_module
 
 S_fun = model.S_function
 N = model.N
-sigma = model.params[0]
+sigma = cast(np.ndarray, model.params)[0]
 
 
 def w_fun(y, args, gr=False):
@@ -59,7 +60,7 @@ y0 = np.array([1.0])
 y_no_insurance = np.array([20.0])
 
 
-def compute_second_best(model: ScreeningModel) -> np.ndarray:
+def compute_second_best(model: ScreeningModel) -> ThreeArrays:
     y_second = np.zeros(N)
     w_second = np.zeros(N)
     args = [thetas[-1, :], thetas[-1, :], N - 1]

@@ -1,8 +1,9 @@
 from pathlib import Path
-
+import numpy as np
 from dotenv import dotenv_values
 from rich.console import Console
 from rich.table import Table
+from typing import cast
 
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
     cost_non_insur,
@@ -18,7 +19,7 @@ model = setup_model(config)
 
 cost_zero = cost_non_insur(model)
 deltas = model.theta_mat[:, 0]
-s = model.params[1]
+s = cast(np.ndarray, model.params)[1]
 accident_proba = proba_claim(deltas, s)
 loss_pos = expected_positive_loss(deltas, s)
 

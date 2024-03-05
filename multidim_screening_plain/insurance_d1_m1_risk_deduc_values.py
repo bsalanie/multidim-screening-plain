@@ -86,7 +86,7 @@ def val_BC(
         If `gr` is `True`, we also return the derivatives wrt `y`.
     """
     check_args("val_BC", y, theta)
-    params = model.params
+    params = cast(np.ndarray, model.params)
     sigma, s = params[0], params[1]
     if theta is not None:
         return val_BC_1(theta, y, sigma, s, gr=gr)
@@ -195,7 +195,7 @@ def val_I(
         if `gr` is `True` we also return the gradient.
     """
     check_args("val_I", y, theta)
-    s = model.params[1]
+    s = cast(np.ndarray, model.params)[1]
     if theta is not None:
         return val_I_1(model, y, theta, s, gr=gr)
     else:
@@ -219,7 +219,7 @@ def val_I_1(
 def val_I_all(model: ScreeningModel, y: np.ndarray, s: float, gr: bool = False) -> Any:
     """`val_I` for all types and all contracts in `y`"""
     deltas = model.theta_mat[:, 0]
-    values_A = val_A(deltas, s)
+    values_A = cast(np.ndarray, val_A(deltas, s))
     values_BC = val_BC(model, y, gr=gr)
     if not gr:
         obj = values_BC + values_A.reshape((-1, 1))
@@ -262,6 +262,6 @@ def expected_positive_loss(deltas, s):
 
 
 def cost_non_insur(model):
-    sigma = model.params[0]
+    sigma = cast(np.ndarray, model.params)[0]
     y_no_insur = np.array([20.0])
     return np.log(val_I(model, y_no_insur))[:, 0] / sigma

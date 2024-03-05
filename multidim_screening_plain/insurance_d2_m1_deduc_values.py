@@ -91,7 +91,7 @@ def val_BC(
         # print(f"{y=}, {theta=}")
         y_0 = y[0]
         sigma, delta = theta[0], theta[1]
-        s = model.params[0]
+        s = cast(np.ndarray, model.params)[0]
         argu1 = delta / s + s * sigma
         dy0s = (delta - y_0) / s
         argu2 = dy0s + s * sigma
@@ -117,7 +117,7 @@ def val_BC(
         y_0 = y
         theta_mat = model.theta_mat
         sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-        s = model.params[0]
+        s = cast(np.ndarray, model.params)[0]
         # argu1 = precalculated_values["argu1"]
         argu1 = deltas / s + s * sigmas
         dy0s = np.subtract.outer(deltas, y_0) / s
@@ -195,7 +195,7 @@ def val_I(
     # precalculated_values = model.precalculated_values
     if theta is not None:
         delta = theta[1]
-        s = model.params[0]
+        s = cast(np.ndarray, model.params)[0]
         value_A = cast(float, val_A(delta, s))
         value_BC = val_BC(model, y, theta=theta, gr=gr)
         if not gr:
@@ -206,8 +206,8 @@ def val_I(
     else:
         # value_A2 = cast(np.ndarray, precalculated_values["values_A"])
         deltas = model.theta_mat[:, 1]
-        s = model.params[0]
-        value_A2 = val_A(deltas, s)
+        s = cast(np.ndarray, model.params)[0]
+        value_A2 = cast(np.ndarray, val_A(deltas, s))
         value_BC = val_BC(model, y, gr=gr)
         if not gr:
             return value_BC + value_A2.reshape((-1, 1))

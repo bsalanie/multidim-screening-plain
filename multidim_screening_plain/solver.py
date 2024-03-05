@@ -443,15 +443,18 @@ def solve(
         f.write(
             f"dual tol = {tol_dual:.2e}\n",
         )
-        f.writelines(
-            ", ".join(
-                [
-                    key + f" = {value}"
-                    for key, value in zip(model.params_names, model.params, strict=True)
-                ]
+        if model.params and model.params_names:
+            params = cast(np.ndarray, model.params)
+            params_names = cast(list, model.params_names)
+            f.writelines(
+                ", ".join(
+                    [
+                        key + f" = {value}"
+                        for key, value in zip(params_names, params, strict=True)
+                    ]
+                )
+                + "\n"
             )
-            + "\n"
-        )
         f.write(f"convergence = {criteria.all()}, iterations = {it}, ")
         f.write(
             f"elapsed time = {timedelta(seconds=elapsed)}\n",

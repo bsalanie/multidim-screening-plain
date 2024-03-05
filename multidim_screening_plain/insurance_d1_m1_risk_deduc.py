@@ -46,7 +46,7 @@ def b_fun(
         and if `gr` is `True` we provide the gradient wrt `y`
     """
     check_args("b_fun", y, theta)
-    sigma = model.params[0]
+    sigma = cast(np.ndarray, model.params)[0]
     y_no_insur = np.array([20.0])
     if theta is not None:
         return b_fun_1(model, y, y_no_insur, theta, sigma, gr=gr)
@@ -112,7 +112,7 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
     """
     check_args("S_fun", y, theta)
     delta = theta[0]
-    params = model.params
+    params = cast(np.ndarray, model.params)
     s, loading = params[1], params[2]
     b_vals, D_vals, penalties = (
         b_fun(model, y, theta=theta, gr=gr),
@@ -259,7 +259,7 @@ def add_results(
     model = results.model
     N = model.N
     theta_mat = model.theta_mat
-    s = model.params[1]
+    s = cast(np.ndarray, model.params)[1]
 
     FB_y = model.FB_y
     SB_y = results.SB_y

@@ -35,7 +35,7 @@ from multidim_screening_plain.utils import (
 # def precalculate(model: ScreeningModel) -> None:
 #     theta_mat = model.theta_mat
 #     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-#     s = model.params[0]
+#     s = cast(np.ndarray, cast(np.ndarray, model.params))[0]
 #     values_A = val_A(deltas, s)
 #     sigmas_s = s * sigmas
 #     argu1 = deltas / s + sigmas_s
@@ -124,7 +124,7 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
     """
     check_args("S_fun", y, theta)
     delta = theta[1]
-    params = model.params
+    params = cast(np.ndarray, model.params)
     s, loading = params[0], params[1]
     b_vals, D_vals, penalties = (
         b_fun(model, y, theta=theta, gr=gr),
@@ -269,7 +269,7 @@ def add_results(
     model = results.model
     N = model.N
     theta_mat = model.theta_mat
-    s = model.params[0]
+    s = cast(np.ndarray, model.params)[0]
 
     FB_y = model.FB_y
     SB_y = results.SB_y

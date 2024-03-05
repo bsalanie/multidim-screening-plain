@@ -1,5 +1,6 @@
 from pathlib import Path
-
+import numpy as np
+from typing import cast
 from dotenv import dotenv_values
 from rich.console import Console
 from rich.table import Table
@@ -18,7 +19,7 @@ model = setup_model(config)
 
 cost_zero = cost_non_insur(model)
 sigmas, deltas = model.theta_mat[:, 0], model.theta_mat[:, 1]
-s = model.params[0]
+s = cast(np.ndarray, model.params)[0]
 accident_proba = proba_claim(deltas, s)
 loss_pos = expected_positive_loss(deltas, s)
 

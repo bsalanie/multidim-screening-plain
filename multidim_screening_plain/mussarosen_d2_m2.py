@@ -179,7 +179,7 @@ def proximal_operator(
     Returns:
         the minimizing `y`, a 2-vector
     """
-    if isinstance(t, float):
+    if isinstance(t, float) and isinstance(z, np.ndarray):
         return cast(np.ndarray, (t * theta + z) / (t + 1.0))
     else:
         return theta

@@ -186,8 +186,10 @@ class ScreeningResults:
         print(f"{d=}, {m=}")
         print(df_output.columns)
         if self.additional_results and self.additional_results_names:
+            additional_results_names = cast(list, self.additional_results_names)
+            additional_results = cast(list, self.additional_results)
             for name, res in zip(
-                self.additional_results_names, self.additional_results, strict=True
+                additional_results_names, additional_results, strict=True
             ):
                 df_output[name] = res.round(3)
 
@@ -235,10 +237,13 @@ class ScreeningResults:
         df_output.to_csv(model_resdir / "all_results.csv", index=False)
 
         # save the value of the parameters of the model
-        df_params = pd.DataFrame()
-        for k, v in zip(model.params_names, model.params, strict=True):
-            df_params[k] = [v]
-        df_params.to_csv(model_resdir / "params.csv", index=False)
+        if model.params and model.params_names:
+            params_names = cast(list, model.params_names)
+            params = cast(np.ndarray, model.params)
+            df_params = pd.DataFrame()
+            for k, v in zip(params_names, params, strict=True):
+                df_params[k] = [v]
+            df_params.to_csv(model_resdir / "params.csv", index=False)
 
     def __repr__(self) -> str:
         model = self.model
