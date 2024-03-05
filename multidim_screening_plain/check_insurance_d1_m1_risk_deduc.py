@@ -2,19 +2,19 @@
 This has type=risk, contract=deductible.
 """
 
-
 from pathlib import Path
 from typing import cast
+
 import numpy as np
 import pandas as pd
 from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsnputils import ThreeArrays
 from dotenv import dotenv_values
-from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import val_I
 from rich.console import Console
 from rich.table import Table
 
 from multidim_screening_plain.classes import ScreeningModel
+from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import val_I
 from multidim_screening_plain.setup import setup_model
 
 # load configuration

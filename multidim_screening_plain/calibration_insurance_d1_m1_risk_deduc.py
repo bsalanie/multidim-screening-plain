@@ -1,9 +1,10 @@
 from pathlib import Path
+from typing import cast
+
 import numpy as np
 from dotenv import dotenv_values
 from rich.console import Console
 from rich.table import Table
-from typing import cast
 
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
     cost_non_insur,

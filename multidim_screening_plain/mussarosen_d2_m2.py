@@ -8,7 +8,6 @@ from bs_python_utils.bsutils import bs_error_abort
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.mussarosen_d2_m2_plots import (
     plot_best_contracts,
-    plot_calibration,
     plot_contract_models,
     plot_contract_riskavs,
     plot_second_best_contracts,
@@ -18,7 +17,6 @@ from multidim_screening_plain.utils import (
     contracts_vector,
     display_variable,
     plot_constraints,
-    plot_y_range,
 )
 
 
@@ -216,11 +214,10 @@ def plot_results(model: ScreeningModel) -> None:
     )
 
     # first plot the first best
-    plot_calibration(df_all_results, path=model_plotdir + "/calibration")
-
     display_variable(
         df_all_results,
         variable="First-best y_0",
+        theta_names=model.type_names,
         cmap="viridis",
         path=model_plotdir + "/first_best_y_0",
     )
@@ -279,7 +276,8 @@ def plot_results(model: ScreeningModel) -> None:
         path=model_plotdir + "/optimal_contracts",
     )
 
-    plot_y_range(df_first_and_second, path=model_plotdir + "/y_range")
+    # plot_y_range(df_first_and_second, contract_names=model.contract_varnames,
+    #              path=model_plotdir + "/y_range")
 
     plot_second_best_contracts(
         df_second,
@@ -293,7 +291,11 @@ def plot_results(model: ScreeningModel) -> None:
     IC_binds = np.loadtxt(model_resdir / "IC_binds.txt").astype(int).tolist()
 
     plot_constraints(
-        df_all_results, IR_binds, IC_binds, path=model_plotdir + "/constraints"
+        df_all_results,
+        model.type_names,
+        IR_binds,
+        IC_binds,
+        path=model_plotdir + "/constraints",
     )
 
     plot_utilities(

@@ -334,6 +334,7 @@ def plot_results(model: ScreeningModel) -> None:
     display_variable(
         df_all_results,
         variable="First-best copay",
+        theta_names=model.type_names,
         cmap="viridis",
         path=model_plotdir + "/first_best_deduc",
     )

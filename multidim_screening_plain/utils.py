@@ -291,18 +291,19 @@ def set_axis(variable: np.ndarray, margin: float = 0.05) -> tuple[float, float]:
 def display_variable(
     df_all_results: pd.DataFrame,
     variable: str,
+    theta_names: list[str],
     title: str | None = None,
     cmap=None,
     path: str | None = None,
     figsize: tuple[int, int] = (5, 5),
     **kwargs: dict | None,
 ) -> None:
-    theta_mat = df_all_results[["Risk-aversion", "Risk location"]].values
+    theta_mat = df_all_results[theta_names].values
     fig, ax = plt.subplots(
         1, 1, figsize=figsize, subplot_kw=kwargs
     )  # subplot_kw=dict(aspect='equal',)
-    _ = ax.set_xlabel(r"Risk-aversion $\sigma$")
-    _ = ax.set_ylabel(r"Risk location $\delta$")
+    _ = ax.set_xlabel(theta_names[0])
+    _ = ax.set_ylabel(theta_names[1])
     _ = ax.set_title(title)
     scatter = ax.scatter(
         theta_mat[:, 0], theta_mat[:, 1], c=df_all_results[variable].values, cmap=cmap
@@ -317,41 +318,40 @@ def display_variable(
 
 def plot_y_range(
     df_first_and_second: pd.DataFrame,
+    contract_names: list[str],
     figsize: tuple[int, int] = (5, 5),
     s: int = 20,
     title: str | None = None,
     path: str | None = None,
     **kwargs,
 ) -> None:
-    """the supposed stingray: the optimal contracts for both first and second best in contract space
-    """
-    first = df_first_and_second.query('Model == "First-best"')[["Deductible", "Copay"]]
-    second = df_first_and_second.query('Model == "Second-best"')[
-        ["Deductible", "Copay"]
-    ]
+    """the supposed stingray: the optimal contracts for both first and second best in contract space"""
+    first = df_first_and_second.query('Model == "First-best"')[contract_names]
+    second = df_first_and_second.query('Model == "Second-best"')[[contract_names]]
 
-    # discard y1 = 1
-    second = second.query("Copay < 0.99")
+    # # discard y1 = 1
+    # second = second.query("Copay < 0.99")
+    y_0_name, y_1_name = contract_names[0], contract_names[1]
     fig, ax = plt.subplots(
         1, 1, figsize=figsize, subplot_kw=kwargs
     )  # subplot_kw=dict(aspect='equal',)
     _ = ax.scatter(
-        second.Deductible.values,
-        second.Copay.values,
+        second.y_0_name.values,
+        second.y_1_name.values,
         color="tab:blue",
         alpha=0.5,
         s=s,
         label="Second-best",
     )
     _ = ax.scatter(
-        first.Deductible.values,
-        first.Copay.values,
+        first.y_0_name.values,
+        first.y_1_name.values,
         color="tab:pink",
         s=s,
         label="First-best",
     )
-    _ = ax.set_xlabel("Deductible")
-    _ = ax.set_ylabel("Copay")
+    _ = ax.set_xlabel(y_0_name)
+    _ = ax.set_ylabel(y_1_name)
     _ = ax.set_title(title)
     if path is not None:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
@@ -359,6 +359,7 @@ def plot_y_range(
 
 def plot_constraints(
     df_all_results: pd.DataFrame,
+    theta_names: list[str],
     IR_binds: list,
     IC_binds: list,
     figsize: tuple = (5, 5),
@@ -367,7 +368,7 @@ def plot_constraints(
     path: str | None = None,
     **kwargs,
 ) -> None:
-    """the original scatterplot  of binding constraints.
+    """the original scatterplot of binding constraints.
 
     Args:
         df_all_results: the dataframe of results
@@ -377,7 +378,7 @@ def plot_constraints(
     Returns:
         nothing. Just plots the constraints.
     """
-    theta_mat = df_all_results[["Risk-aversion", "Risk location"]].values.round(2)
+    theta_mat = df_all_results[theta_names].values.round(2)
     IC = "IC" if title else "IC binding"
     IR = "IR" if title else "IR binding"
     fig, ax = plt.subplots(
@@ -409,8 +410,8 @@ def plot_constraints(
             theta_mat[i, 1],
             theta_mat[j, 1],
         )
-    _ = ax.set_xlabel(r"$\sigma$")
-    _ = ax.set_ylabel(r"$\delta$")
+    _ = ax.set_xlabel(theta_names[0])
+    _ = ax.set_ylabel(theta_names[1])
 
     if title is None:
         _ = ax.legend(

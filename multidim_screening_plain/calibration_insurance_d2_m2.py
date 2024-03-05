@@ -1,6 +1,7 @@
 from pathlib import Path
-import numpy as np
 from typing import cast
+
+import numpy as np
 from dotenv import dotenv_values
 from rich.console import Console
 from rich.table import Table

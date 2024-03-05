@@ -346,6 +346,7 @@ def plot_results(model: ScreeningModel) -> None:
     display_variable(
         df_all_results,
         variable="First-best deductible",
+        theta_names=model.type_names,
         cmap="viridis",
         path=model_plotdir + "/first_best_deduc",
     )
@@ -405,7 +406,9 @@ def plot_results(model: ScreeningModel) -> None:
         path=model_plotdir + "/optimal_contracts",
     )
 
-    plot_y_range(df_first_and_second, path=model_plotdir + "/y_range")
+    plot_y_range(
+        df_first_and_second, model.contract_varnames, path=model_plotdir + "/y_range"
+    )
 
     plot_second_best_contracts(
         df_second,
@@ -419,7 +422,11 @@ def plot_results(model: ScreeningModel) -> None:
     IC_binds = np.loadtxt(model_resdir / "IC_binds.txt").astype(int).tolist()
 
     plot_constraints(
-        df_all_results, IR_binds, IC_binds, path=model_plotdir + "/constraints"
+        df_all_results,
+        model.type_names,
+        IR_binds,
+        IC_binds,
+        path=model_plotdir + "/constraints",
     )
 
     plot_utilities(
