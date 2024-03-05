@@ -17,7 +17,7 @@ from multidim_screening_plain.solver import (
 )
 
 if __name__ == "__main__":
-    config_file = "insurance_d2_m1_deduc"
+    config_file = "mussarosen_d2_m2"
     # load configuration
     config = dotenv_values(
         Path.cwd() / "multidim_screening_plain" / f"config_{config_file}.env"

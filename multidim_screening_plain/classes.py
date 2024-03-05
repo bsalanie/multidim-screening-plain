@@ -51,8 +51,6 @@ class ScreeningModel:
     theta_mat: np.ndarray
     type_names: list[str]
     contract_varnames: list[str]
-    params: np.ndarray  # the parameters of the model
-    params_names: list
     m: int  # the dimension of the contracts
     model_id: str
     resdir: Path
@@ -71,6 +69,9 @@ class ScreeningModel:
     M: float = field(init=False)
     FB_y: np.ndarray = field(init=False)
     precalculated_values: dict = field(init=False)
+
+    params: np.ndarray | None = None  # the parameters of the model
+    params_names: list | None = None
 
     def __post_init__(self):
         self.N, self.d = check_matrix(self.theta_mat)
@@ -109,9 +110,11 @@ class ScreeningModel:
         for j in range(self.m - 1):
             clstr += f"    {self.contract_varnames[j]} and "
         clstr += f"    {self.contract_varnames[-1]}\n"
-        clstr += "    the model parameters are:\n"
-        for name, par in zip(self.params_names, self.params, strict=True):
-            clstr += f"    {name}: {par: > 10.3f}\n"
+        if self.params is not None:
+            params_names = cast(list, self.params_names)
+            clstr += "    the model parameters are:\n"
+            for name, par in zip(params_names, self.params, strict=True):
+                clstr += f"    {name}: {par: > 10.3f}\n"
         return clstr + "\n"
 
 

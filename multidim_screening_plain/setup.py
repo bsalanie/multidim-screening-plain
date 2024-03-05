@@ -98,20 +98,25 @@ def setup_model(model_config: dict) -> ScreeningModel:
 
     # model parameters
     n_params = int(cast(str, model_config["NUMBER_PARAMETERS"]))
-    params = parse_string(
-        cast(str, model_config["PARAMETERS"]),
-        n_params,
-        ",",
-        "parameters",
-        "float",
-    )
-    params_names = parse_string(
-        cast(str, model_config["PARAMETER_NAMES"]),
-        n_params,
-        ",",
-        "parameter names",
-        "str",
-    )
+    if n_params > 0:
+        params = parse_string(
+            cast(str, model_config["PARAMETERS"]),
+            n_params,
+            ",",
+            "parameters",
+            "float",
+        )
+        params_names = parse_string(
+            cast(str, model_config["PARAMETER_NAMES"]),
+            n_params,
+            ",",
+            "parameter names",
+            "str",
+        ).tolist()
+    else:
+        params = None
+        params_names = None
+
     model_module = importlib.import_module(
         f".{model_name}", package="multidim_screening_plain"
     )
@@ -122,7 +127,7 @@ def setup_model(model_config: dict) -> ScreeningModel:
         type_names=type_names.tolist(),
         contract_varnames=contract_varnames.tolist(),
         params=params,
-        params_names=params_names.tolist(),
+        params_names=params_names,
         m=m,
         resdir=resdir,
         plotdir=plotdir,

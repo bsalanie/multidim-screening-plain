@@ -57,8 +57,6 @@ def w_grad(y, args):
 thetas = model.theta_mat
 y0 = np.array([1.0])
 y_no_insurance = np.array([20.0])
-# args = [thetas[7], thetas[8], 7]
-# check_gradient_scalar_function(w_fun, y0, args)
 
 
 def compute_second_best(model: ScreeningModel) -> np.ndarray:
