@@ -183,8 +183,6 @@ class ScreeningResults:
             + ["FB_surplus", "SB_surplus", "info_rents"]
         ]
 
-        print(f"{d=}, {m=}")
-        print(df_output.columns)
         if self.additional_results and self.additional_results_names:
             additional_results_names = cast(list, self.additional_results_names)
             additional_results = cast(list, self.additional_results)
@@ -205,24 +203,44 @@ class ScreeningResults:
         console.print("\n" + "-" * 80 + "\n", style="bold blue")
 
         table = Table(title=f"Optimal contracts for {model.model_id}")
-        table.add_column("Risk-aversion", justify="center", style="blue", no_wrap=True)
-        table.add_column("Risk", justify="center", style="green", no_wrap=True)
-        table.add_column("1B deductible", justify="center", style="blue", no_wrap=True)
-        table.add_column("2B deductible", justify="center", style="green", no_wrap=True)
+        m, d = self.model.m, self.model.d
+        theta_names = self.model.type_names
+        for i in range(d):
+            table.add_column(
+                theta_names[i], justify="center", style="red", no_wrap=True
+            )
+        contract_varnames = self.model.contract_varnames
+        for j in range(m):
+            table.add_column(
+                f"FB {contract_varnames[j]}",
+                justify="center",
+                style="blue",
+                no_wrap=True,
+            )
+        for j in range(m):
+            table.add_column(
+                f"SB {contract_varnames[j]}",
+                justify="center",
+                style="green",
+                no_wrap=True,
+            )
         table.add_column("1B surplus", justify="center", style="red", no_wrap=True)
         table.add_column("2B surplus", justify="center", style="blue", no_wrap=True)
         table.add_column("Info. rent", justify="center", style="black", no_wrap=True)
 
-        for t in df_output.itertuples():
-            table.add_row(
-                f"{t.theta_0: > 8.3f}",
-                f"{t.theta_1: > 8.3f}",
-                f"{t.FB_y_0: > 8.3f}",
-                f"{t.y_0: > 8.3f}",
-                f"{t.FB_surplus: > 8.3f}",
-                f"{t.SB_surplus: > 8.3f}",
-                f"{t.info_rents: > 8.3f}",
-            )
+        # elements_list = [df_output["theta_0"]]
+        # for i in range(1, d):
+        #     elements_list.append(df_output[f"theta_{i}"])
+        # for j in range(m):
+        #     elements_list.append(df_output[f"FB_y_{j}"])
+        # for j in range(m):
+        #     elements_list.append(df_output[f"y_{j}"])
+        # elements_list.extend(
+        #     [df_output["FB_surplus"], df_output["SB_surplus"], df_output["info_rents"]]
+        # )
+
+        # for elements_row in zip(*elements_list, strict=True):
+        #     table.add_row(f"{x: > 8.3f}" for x in elements_row)
 
         console.print(table)
 
