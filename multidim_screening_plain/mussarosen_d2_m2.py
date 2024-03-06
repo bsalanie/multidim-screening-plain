@@ -17,6 +17,7 @@ from multidim_screening_plain.utils import (
     contracts_vector,
     display_variable,
     plot_constraints,
+    plot_y_range,
 )
 
 
@@ -276,8 +277,11 @@ def plot_results(model: ScreeningModel) -> None:
         path=model_plotdir + "/optimal_contracts",
     )
 
-    # plot_y_range(df_first_and_second, contract_names=model.contract_varnames,
-    #              path=model_plotdir + "/y_range")
+    plot_y_range(
+        df_first_and_second,
+        contract_names=model.contract_varnames,
+        path=model_plotdir + "/y_range",
+    )
 
     plot_second_best_contracts(
         df_second,

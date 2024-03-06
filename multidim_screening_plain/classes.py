@@ -152,6 +152,51 @@ class ScreeningResults:
         self.SB_surplus = S_second
         self.info_rents = U_second
 
+    def make_table(self, df_output) -> Table:
+        model = self.model
+        d, m = model.d, model.m
+        table = Table(title=f"Optimal contracts for {model.model_id}")
+        theta_names = model.type_names
+        for i in range(d):
+            table.add_column(
+                theta_names[i], justify="center", style="red", no_wrap=True
+            )
+        contract_varnames = model.contract_varnames
+        for j in range(m):
+            table.add_column(
+                f"FB {contract_varnames[j]}",
+                justify="center",
+                style="blue",
+                no_wrap=True,
+            )
+        for j in range(m):
+            table.add_column(
+                f"SB {contract_varnames[j]}",
+                justify="center",
+                style="green",
+                no_wrap=True,
+            )
+        table.add_column("1B surplus", justify="center", style="red", no_wrap=True)
+        table.add_column("2B surplus", justify="center", style="blue", no_wrap=True)
+        table.add_column("Info. rent", justify="center", style="black", no_wrap=True)
+
+        elements_list = [df_output["theta_0"]]
+        for i in range(1, d):
+            elements_list.append(df_output[f"theta_{i}"])
+        for j in range(m):
+            elements_list.append(df_output[f"FB_y_{j}"])
+        for j in range(m):
+            elements_list.append(df_output[f"y_{j}"])
+        elements_list.extend(
+            [df_output["FB_surplus"], df_output["SB_surplus"], df_output["info_rents"]]
+        )
+
+        for elements_row in zip(*elements_list, strict=True):
+            gen_row = (f"{x: > 8.3f}" for x in elements_row)
+            table.add_row(*gen_row)
+
+        return table
+
     def output_results(self) -> None:
         """prints the optimal contracts, and saves the results in a dataframe."""
         model = self.model
@@ -191,57 +236,9 @@ class ScreeningResults:
             ):
                 df_output[name] = res.round(3)
 
-        # with pd.option_context(  # 'display.max_rows', None,
-        #     "display.max_columns",
-        #     None,
-        #     "display.precision",
-        #     3,
-        # ):
-        #     print(df_output)
-
         console = Console()
         console.print("\n" + "-" * 80 + "\n", style="bold blue")
-
-        table = Table(title=f"Optimal contracts for {model.model_id}")
-        m, d = self.model.m, self.model.d
-        theta_names = self.model.type_names
-        for i in range(d):
-            table.add_column(
-                theta_names[i], justify="center", style="red", no_wrap=True
-            )
-        contract_varnames = self.model.contract_varnames
-        for j in range(m):
-            table.add_column(
-                f"FB {contract_varnames[j]}",
-                justify="center",
-                style="blue",
-                no_wrap=True,
-            )
-        for j in range(m):
-            table.add_column(
-                f"SB {contract_varnames[j]}",
-                justify="center",
-                style="green",
-                no_wrap=True,
-            )
-        table.add_column("1B surplus", justify="center", style="red", no_wrap=True)
-        table.add_column("2B surplus", justify="center", style="blue", no_wrap=True)
-        table.add_column("Info. rent", justify="center", style="black", no_wrap=True)
-
-        # elements_list = [df_output["theta_0"]]
-        # for i in range(1, d):
-        #     elements_list.append(df_output[f"theta_{i}"])
-        # for j in range(m):
-        #     elements_list.append(df_output[f"FB_y_{j}"])
-        # for j in range(m):
-        #     elements_list.append(df_output[f"y_{j}"])
-        # elements_list.extend(
-        #     [df_output["FB_surplus"], df_output["SB_surplus"], df_output["info_rents"]]
-        # )
-
-        # for elements_row in zip(*elements_list, strict=True):
-        #     table.add_row(f"{x: > 8.3f}" for x in elements_row)
-
+        table = self.make_table(df_output)
         console.print(table)
 
         model_resdir = cast(Path, model.resdir)

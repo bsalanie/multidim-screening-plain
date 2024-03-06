@@ -5,6 +5,7 @@ and two-dimensional contracts  (y0=deductible, y1=proportional copay)
 from pathlib import Path
 from typing import cast
 
+import click
 import pandas as pd
 from dotenv import dotenv_values
 
@@ -16,12 +17,15 @@ from multidim_screening_plain.solver import (
     solve,
 )
 
-if __name__ == "__main__":
-    config_file = "mussarosen_d2_m2"
+
+@click.command()
+@click.argument("config_file")
+def main(config_file):
     # load configuration
     config = dotenv_values(
         Path.cwd() / "multidim_screening_plain" / f"config_{config_file}.env"
     )
+
     model = setup_model(config)
     module = model.model_module
 
@@ -30,7 +34,6 @@ if __name__ == "__main__":
     do_first_best = config["DO_FIRST_BEST"] == "True"
     do_solve = config["DO_SOLVE"] == "True"
     start_from_first_best = config["START_FROM_FIRST_BEST"] == "True"
-    start_from_current = not start_from_first_best
     do_plots = config["DO_PLOTS"] == "True"
 
     if do_first_best:
@@ -79,3 +82,7 @@ if __name__ == "__main__":
 
     if do_plots:
         module.plot_results(model)
+
+
+if __name__ == "__main__":
+    main()

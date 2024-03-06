@@ -326,8 +326,10 @@ def plot_y_range(
     **kwargs,
 ) -> None:
     """the supposed stingray: the optimal contracts for both first and second best in contract space"""
+    print(df_first_and_second.columns)
+    print(contract_names)
     first = df_first_and_second.query('Model == "First-best"')[contract_names]
-    second = df_first_and_second.query('Model == "Second-best"')[[contract_names]]
+    second = df_first_and_second.query('Model == "Second-best"')[contract_names]
 
     # # discard y1 = 1
     # second = second.query("Copay < 0.99")
@@ -336,16 +338,16 @@ def plot_y_range(
         1, 1, figsize=figsize, subplot_kw=kwargs
     )  # subplot_kw=dict(aspect='equal',)
     _ = ax.scatter(
-        second.y_0_name.values,
-        second.y_1_name.values,
+        second[y_0_name].values,
+        second[y_1_name].values,
         color="tab:blue",
         alpha=0.5,
         s=s,
         label="Second-best",
     )
     _ = ax.scatter(
-        first.y_0_name.values,
-        first.y_1_name.values,
+        first[y_0_name].values,
+        first[y_1_name].values,
         color="tab:pink",
         s=s,
         label="First-best",
