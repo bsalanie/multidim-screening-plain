@@ -6,51 +6,12 @@ import pandas as pd
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.mussarosen_d2_m2_plots import (
-    plot_best_contracts,
-    plot_contract_models,
-    plot_contract_riskavs,
-    plot_second_best_contracts,
-    plot_utilities,
-)
+from multidim_screening_plain.general_plots import general_plots
 from multidim_screening_plain.utils import (
+    check_args,
     contracts_vector,
-    display_variable,
-    plot_constraints,
-    plot_y_range,
+    split_y,
 )
-
-
-def split_y(y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Split y into two halves of equal length (deductibles and copays)"""
-    N = y.size // 2
-    y_0, y_1 = y[:N], y[N:]
-    return y_0, y_1
-
-
-def check_args(function_name: str, y: np.ndarray, theta: np.ndarray | None) -> None:
-    """check the arguments passed"""
-    if theta is not None:
-        if theta.shape != (2,):
-            bs_error_abort(
-                f"{function_name}: If theta is given it should be a 2-vector, not shape"
-                f" {theta.shape}"
-            )
-        if y.shape != (2,):
-            bs_error_abort(
-                f"{function_name}: If theta is given, y should be a 2-vector, not shape"
-                f" {y.shape}"
-            )
-    else:
-        if y.ndim != 1:
-            bs_error_abort(
-                f"{function_name}: y should be a vector, not {y.ndim}-dimensional"
-            )
-        if y.size % 2 != 0:
-            bs_error_abort(
-                f"{function_name}: y should have an even number of elements, not"
-                f" {y.size}"
-            )
 
 
 def b_fun(
@@ -74,7 +35,7 @@ def b_fun(
             all `k` contracts `y_j` in `y`
         and if `gr` is `True` we provide the gradient wrt `y`
     """
-    check_args("b_fun", y, theta)
+    check_args("b_fun", y, 2, 2, theta)
     if theta is not None:
         b_val = np.dot(theta, y)
         if not gr:
@@ -83,7 +44,7 @@ def b_fun(
             return b_val, theta
     else:
         theta_mat = model.theta_mat
-        y_0, y_1 = split_y(y)
+        y_0, y_1 = split_y(y, 2)
         b_vals = np.outer(theta_mat[:, 0], y_0) + np.outer(theta_mat[:, 1], y_1)
         if not gr:
             return b_vals
@@ -108,7 +69,7 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
         the value of `S(y,theta)` for this contract and this type,
             and its gradient wrt `y` if `gr` is `True`
     """
-    check_args("S_fun", y, theta)
+    check_args("S_fun", y, 2, 2, theta)
     b_vals = b_fun(model, y, theta=theta, gr=gr)
     cost = np.dot(y, y) / 2.0
     if not gr:
@@ -197,7 +158,6 @@ def add_results(
 
 def plot_results(model: ScreeningModel) -> None:
     model_resdir = cast(Path, model.resdir)
-    model_plotdir = str(cast(Path, model.plotdir))
     df_all_results = (
         pd.read_csv(model_resdir / "all_results.csv")
         .rename(
@@ -214,95 +174,4 @@ def plot_results(model: ScreeningModel) -> None:
         .round(3)
     )
 
-    # first plot the first best
-    display_variable(
-        df_all_results,
-        variable="First-best y_0",
-        theta_names=model.type_names,
-        cmap="viridis",
-        path=model_plotdir + "/first_best_y_0",
-    )
-
-    df_contracts = df_all_results[
-        [
-            "theta_0",
-            "theta_1",
-            "First-best y_0",
-            "First-best y_1",
-            "Second-best y_0",
-            "Second-best y_1",
-        ]
-    ]
-
-    df_first_and_second = pd.DataFrame(
-        {
-            "Model": np.concatenate(
-                (np.full(model.N, "First-best"), np.full(model.N, "Second-best"))
-            ),
-            "theta_0": np.tile(df_contracts["theta_0"].values, 2),
-            "theta_1": np.tile(df_contracts["theta_1"].values, 2),
-            "y_0": np.concatenate(
-                (
-                    df_contracts["First-best y_0"],
-                    df_contracts["Second-best y_0"],
-                )
-            ),
-            "y_1": np.concatenate(
-                (
-                    df_contracts["First-best y_1"],
-                    df_contracts["Second-best y_1"],
-                )
-            ),
-        }
-    )
-
-    plot_contract_models(df_first_and_second, "y_0", path=model_plotdir + "/y_0_models")
-
-    plot_contract_models(df_first_and_second, "y_1", path=model_plotdir + "/y_1_models")
-
-    plot_contract_riskavs(
-        df_first_and_second,
-        "y_0",
-        path=model_plotdir + "/y_0_riskavs",
-    )
-
-    plot_contract_riskavs(
-        df_first_and_second, "y_1", path=model_plotdir + "/y_1_riskavs"
-    )
-
-    df_second = df_first_and_second.query('Model == "Second-best"')
-
-    plot_best_contracts(
-        df_first_and_second,
-        path=model_plotdir + "/optimal_contracts",
-    )
-
-    plot_y_range(
-        df_first_and_second,
-        contract_names=model.contract_varnames,
-        path=model_plotdir + "/y_range",
-    )
-
-    plot_second_best_contracts(
-        df_second,
-        title="Second-best contracts",
-        cmap="viridis",
-        path=model_plotdir + "/second_best_contracts",
-    )
-
-    IR_binds = np.loadtxt(model_resdir / "IR_binds.txt").astype(int).tolist()
-
-    IC_binds = np.loadtxt(model_resdir / "IC_binds.txt").astype(int).tolist()
-
-    plot_constraints(
-        df_all_results,
-        model.type_names,
-        IR_binds,
-        IC_binds,
-        path=model_plotdir + "/constraints",
-    )
-
-    plot_utilities(
-        df_all_results,
-        path=model_plotdir + "/utilities",
-    )
+    general_plots(model, df_all_results)

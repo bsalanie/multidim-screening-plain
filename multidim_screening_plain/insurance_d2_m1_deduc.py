@@ -24,9 +24,9 @@ from multidim_screening_plain.insurance_d2_m1_deduc_values import (
     val_D,
     val_I,
 )
+from multidim_screening_plain.plot_utils import display_variable_d2
 from multidim_screening_plain.utils import (
     contracts_vector,
-    display_variable,
 )
 
 ###
@@ -331,7 +331,7 @@ def plot_results(model: ScreeningModel) -> None:
     # first plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
 
-    display_variable(
+    display_variable_d2(
         df_all_results,
         variable="First-best deductible",
         theta_names=model.type_names,

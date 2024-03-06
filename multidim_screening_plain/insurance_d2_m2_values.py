@@ -5,12 +5,13 @@ with two-dimensional types (risk-aversion, risk) and (deductible, copay) contrac
 from typing import Any, cast
 
 import numpy as np
-from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel
 from multidim_screening_plain.utils import (
     bs_norm_cdf,
     bs_norm_pdf,
+    check_args,
+    split_y,
 )
 
 # penalties to keep minimization of `S` within bounds
@@ -21,13 +22,6 @@ coeff_qpenalty_S1_1 = 1_000.0  # coefficient of the quadratic penalty on S for y
 coeff_qpenalty_S01_0 = (
     1_000.0  # coefficient of the quadratic penalty on S for y0 + y1 small
 )
-
-
-def split_y(y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Split y into two halves of equal length (deductibles and copays)"""
-    N = y.size // 2
-    y_0, y_1 = y[:N], y[N:]
-    return y_0, y_1
 
 
 def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
@@ -42,31 +36,6 @@ def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
     # return argu * n01_cdf_mat(argu) + n01_pdf_mat(argu)
     # return argu * norm.cdf(argu) + norm.pdf(argu)
     return argu * bs_norm_cdf(argu) + bs_norm_pdf(argu)
-
-
-def check_args(function_name: str, y: np.ndarray, theta: np.ndarray | None) -> None:
-    """check the arguments passed"""
-    if theta is not None:
-        if theta.shape != (2,):
-            bs_error_abort(
-                f"{function_name}: If theta is given it should be a 2-vector, not shape"
-                f" {theta.shape}"
-            )
-        if y.shape != (2,):
-            bs_error_abort(
-                f"{function_name}: If theta is given, y should be a 2-vector, not shape"
-                f" {y.shape}"
-            )
-    else:
-        if y.ndim != 1:
-            bs_error_abort(
-                f"{function_name}: y should be a vector, not {y.ndim}-dimensional"
-            )
-        if y.size % 2 != 0:
-            bs_error_abort(
-                f"{function_name}: y should have an even number of elements, not"
-                f" {y.size}"
-            )
 
 
 def val_A(deltas: np.ndarray | float, s: float) -> np.ndarray | float:
@@ -105,7 +74,7 @@ def val_BC(
             for all types and the contracts in `y` as an $(N, k)$ matrix
         If `gr` is `True`, we also return the derivatives wrt `y`.
     """
-    check_args("val_BC", y, theta)
+    check_args("val_BC", y, 2, 2, theta)
     if theta is not None:
         # print(f"{y=}, {theta=}")
         y_0, y_1 = y[0], y[1]
@@ -136,7 +105,7 @@ def val_BC(
             return val_compB + val_compC, grad
     else:
         # precalculated_values = model.precalculated_values
-        y_0, y_1 = split_y(y)
+        y_0, y_1 = split_y(y, 2)
         theta_mat = model.theta_mat
         sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
         s = cast(np.ndarray, model.params)[0]
@@ -219,7 +188,7 @@ def val_I(
         otherwise, the values of `I(y,t,s)` for all types and for all contracts in `y` as an $(N, k)$ matrix
         if `gr` is `True` we also return the gradient.
     """
-    check_args("val_I", y, theta)
+    check_args("val_I", y, 2, 2, theta)
     # precalculated_values = model.precalculated_values
     if theta is not None:
         delta = theta[1]

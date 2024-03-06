@@ -4,7 +4,7 @@ import altair as alt
 import pandas as pd
 from bs_python_utils.bs_altair import _maybe_save
 
-from multidim_screening_plain.utils import set_axis
+from multidim_screening_plain.plot_utils import set_axis
 
 
 def plot_calibration(

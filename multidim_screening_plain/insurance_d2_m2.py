@@ -7,18 +7,12 @@ from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
+from multidim_screening_plain.general_plots import general_plots
 from multidim_screening_plain.insurance_d2_m2_plots import (
-    plot_best_contracts,
     plot_calibration,
-    plot_contract_models,
-    plot_contract_riskavs,
-    plot_copays,
-    plot_second_best_contracts,
-    plot_utilities,
 )
 from multidim_screening_plain.insurance_d2_m2_values import (
     S_penalties,
-    check_args,
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
@@ -26,10 +20,8 @@ from multidim_screening_plain.insurance_d2_m2_values import (
     val_I,
 )
 from multidim_screening_plain.utils import (
+    check_args,
     contracts_vector,
-    display_variable,
-    plot_constraints,
-    plot_y_range,
 )
 
 ######
@@ -76,7 +68,7 @@ def b_fun(
             all `k` contracts `y_j` in `y`
         and if `gr` is `True` we provide the gradient wrt `y`
     """
-    check_args("b_fun", y, theta)
+    check_args("b_fun", y, 2, 2, theta)
     if theta is not None:
         y_no_insur = np.array([0.0, 1.0])
         value_non_insured = val_I(model, y_no_insur, theta=theta)
@@ -127,7 +119,7 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
         the value of `S(y,theta)` for this contract and this type,
             and its gradient wrt `y` if `gr` is `True`
     """
-    check_args("S_fun", y, theta)
+    check_args("S_fun", y, 2, 2, theta)
     delta = theta[1]
     params = cast(np.ndarray, model.params)
     s, loading = params[0], params[1]
@@ -340,96 +332,6 @@ def plot_results(model: ScreeningModel) -> None:
         df_all_results["Second-best copay"].values, 0.0, 1.0
     )
 
-    # first plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
 
-    display_variable(
-        df_all_results,
-        variable="First-best deductible",
-        theta_names=model.type_names,
-        cmap="viridis",
-        path=model_plotdir + "/first_best_deduc",
-    )
-
-    df_contracts = df_all_results[
-        [
-            "Risk-aversion",
-            "Risk location",
-            "First-best deductible",
-            "Second-best deductible",
-            "Second-best copay",
-        ]
-    ]
-
-    df_first_and_second = pd.DataFrame(
-        {
-            "Model": np.concatenate(
-                (np.full(model.N, "First-best"), np.full(model.N, "Second-best"))
-            ),
-            "Risk-aversion": np.tile(df_contracts["Risk-aversion"].values, 2),
-            "Risk location": np.tile(df_contracts["Risk location"].values, 2),
-            "Deductible": np.concatenate(
-                (
-                    df_contracts["First-best deductible"],
-                    df_contracts["Second-best deductible"],
-                )
-            ),
-            "Copay": np.concatenate(
-                (np.zeros(model.N), df_contracts["Second-best copay"].values)
-            ),
-        }
-    )
-
-    plot_contract_models(
-        df_first_and_second, "Deductible", path=model_plotdir + "/deducs_models"
-    )
-
-    plot_contract_models(
-        df_first_and_second, "Copay", path=model_plotdir + "/copays_models"
-    )
-
-    plot_contract_riskavs(
-        df_first_and_second,
-        "Deductible",
-        path=model_plotdir + "/deducs_riskavs",
-    )
-
-    plot_contract_riskavs(
-        df_first_and_second, "Copay", path=model_plotdir + "/copays_riskavs"
-    )
-
-    df_second = df_first_and_second.query('Model == "Second-best"')
-    plot_copays(df_second, path=model_plotdir + "/copays")
-
-    plot_best_contracts(
-        df_first_and_second,
-        path=model_plotdir + "/optimal_contracts",
-    )
-
-    plot_y_range(
-        df_first_and_second, model.contract_varnames, path=model_plotdir + "/y_range"
-    )
-
-    plot_second_best_contracts(
-        df_second,
-        title="Second-best contracts",
-        cmap="viridis",
-        path=model_plotdir + "/second_best_contracts",
-    )
-
-    IR_binds = np.loadtxt(model_resdir / "IR_binds.txt").astype(int).tolist()
-
-    IC_binds = np.loadtxt(model_resdir / "IC_binds.txt").astype(int).tolist()
-
-    plot_constraints(
-        df_all_results,
-        model.type_names,
-        IR_binds,
-        IC_binds,
-        path=model_plotdir + "/constraints",
-    )
-
-    plot_utilities(
-        df_all_results,
-        path=model_plotdir + "/utilities",
-    )
+    general_plots(model, df_all_results)

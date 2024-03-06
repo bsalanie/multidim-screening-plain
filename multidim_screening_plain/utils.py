@@ -1,11 +1,8 @@
 from math import exp, sqrt
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
-import altair as alt
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from bs_python_utils.bsutils import bs_error_abort
 
 results_dir = Path.cwd() / "results"
@@ -52,6 +49,42 @@ def make_grid(theta: list[np.ndarray]) -> np.ndarray:
     for j in range(d):
         theta_mat[:, j] = ltheta[j]
     return theta_mat
+
+
+def split_y(y: np.ndarray, m: int) -> list[np.ndarray]:
+    """Split y into `m` chunks of equal length"""
+    N = y.size // m
+    y_chunks = [] * m
+    for j in range(m):
+        y_chunks.append(y[j * N : (j + 1) * N])
+    return y_chunks
+
+
+def check_args(
+    function_name: str, y: np.ndarray, d: int, m: int, theta: np.ndarray | None
+) -> None:
+    """check the arguments passed"""
+    if theta is not None:
+        if theta.shape != (d,):
+            bs_error_abort(
+                f"{function_name}: If theta is given it should be a {d}-vector, not shape"
+                f" {theta.shape}"
+            )
+        if y.shape != (m,):
+            bs_error_abort(
+                f"{function_name}: If theta is given, y should be a {m}-vector, not shape"
+                f" {y.shape}"
+            )
+    else:
+        if y.ndim != 1:
+            bs_error_abort(
+                f"{function_name}: y should be a vector, not {y.ndim}-dimensional"
+            )
+        if y.size % m != 0:
+            bs_error_abort(
+                f"{function_name}: y should have a number of elements multiple of {m}, not"
+                f" {y.size}"
+            )
 
 
 def add_to_each_col(mat: np.ndarray, vec: np.ndarray) -> np.ndarray:
@@ -215,217 +248,3 @@ def contracts_matrix(y_vec: np.ndarray, N: int) -> np.ndarray:
 def L2_norm(x: np.ndarray) -> float:
     """Computes the L2 norm of a vector for numba"""
     return sqrt(np.sum(x * x))
-
-
-def drawArrow(ax, xA, xB, yA, yB, c="k", ls="-"):
-    n = 50
-    x = np.linspace(xA, xB, 2 * n + 1)
-    y = np.linspace(yA, yB, 2 * n + 1)
-    ax.plot(x, y, color=c, linestyle=ls)
-    ax.annotate(
-        "",
-        xy=(x[n], y[n]),
-        xytext=(x[n - 1], y[n - 1]),
-        arrowprops={"arrowstyle": "-|>", "color": c},
-        size=15,
-        # zorder=2,
-    )
-
-
-def set_colors(list_vals: list[Any], interpolate: bool = False) -> alt.Scale:
-    """sets the colors at values of a variable.
-
-    Args:
-        list_vals: the values of the variable
-        interpolate: whether we interpolate
-
-    Returns:
-        the color scheme.
-    """
-    n_vals = len(list_vals)
-    list_colors = [
-        "red",
-        "lightred",
-        "orange",
-        "yellow",
-        "lightgreen",
-        "green",
-        "lightblue",
-        "darkblue",
-        "violet",
-        "black",
-    ]
-    if n_vals == 3:
-        list_colors = [list_colors[i] for i in [0, 5, 7]]
-    elif n_vals == 4:
-        list_colors = [list_colors[i] for i in [0, 3, 6, 9]]
-    elif n_vals == 5:
-        list_colors = [list_colors[i] for i in [0, 2, 4, 6, 8]]
-    elif n_vals == 7:
-        list_colors = [list_colors[i] for i in [0, 1, 2, 4, 6, 8, 9]]
-    if interpolate:
-        our_colors = alt.Scale(domain=list_vals, range=list_colors, interpolate="rgb")
-    else:
-        our_colors = alt.Scale(domain=list_vals, range=list_colors)
-
-    return our_colors
-
-
-def set_axis(variable: np.ndarray, margin: float = 0.05) -> tuple[float, float]:
-    """sets the axis for a plot with a margin
-
-    Args:
-        variable: the values of the variable
-        margin: the margin to add, a fraction of the range of the variable
-
-    Returns:
-        the min and max for the axis.
-    """
-    x_min, x_max = variable.min(), variable.max()
-    scaled_diff = margin * (x_max - x_min)
-    x_min -= scaled_diff
-    x_max += scaled_diff
-    return x_min, x_max
-
-
-def display_variable(
-    df_all_results: pd.DataFrame,
-    variable: str,
-    theta_names: list[str],
-    title: str | None = None,
-    cmap=None,
-    path: str | None = None,
-    figsize: tuple[int, int] = (5, 5),
-    **kwargs: dict | None,
-) -> None:
-    theta_mat = df_all_results[theta_names].values
-    fig, ax = plt.subplots(
-        1, 1, figsize=figsize, subplot_kw=kwargs
-    )  # subplot_kw=dict(aspect='equal',)
-    _ = ax.set_xlabel(theta_names[0])
-    _ = ax.set_ylabel(theta_names[1])
-    _ = ax.set_title(title)
-    scatter = ax.scatter(
-        theta_mat[:, 0], theta_mat[:, 1], c=df_all_results[variable].values, cmap=cmap
-    )
-    _ = fig.colorbar(scatter, label=variable)
-    if title is not None:
-        _ = ax.set_title(title)
-
-    if path is not None:
-        fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
-
-
-def plot_y_range(
-    df_first_and_second: pd.DataFrame,
-    contract_names: list[str],
-    figsize: tuple[int, int] = (5, 5),
-    s: int = 20,
-    title: str | None = None,
-    path: str | None = None,
-    **kwargs,
-) -> None:
-    """the supposed stingray: the optimal contracts for both first and second best in contract space"""
-    print(df_first_and_second.columns)
-    print(contract_names)
-    first = df_first_and_second.query('Model == "First-best"')[contract_names]
-    second = df_first_and_second.query('Model == "Second-best"')[contract_names]
-
-    # # discard y1 = 1
-    # second = second.query("Copay < 0.99")
-    y_0_name, y_1_name = contract_names[0], contract_names[1]
-    fig, ax = plt.subplots(
-        1, 1, figsize=figsize, subplot_kw=kwargs
-    )  # subplot_kw=dict(aspect='equal',)
-    _ = ax.scatter(
-        second[y_0_name].values,
-        second[y_1_name].values,
-        color="tab:blue",
-        alpha=0.5,
-        s=s,
-        label="Second-best",
-    )
-    _ = ax.scatter(
-        first[y_0_name].values,
-        first[y_1_name].values,
-        color="tab:pink",
-        s=s,
-        label="First-best",
-    )
-    _ = ax.set_xlabel(y_0_name)
-    _ = ax.set_ylabel(y_1_name)
-    _ = ax.set_title(title)
-    if path is not None:
-        fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
-
-
-def plot_constraints(
-    df_all_results: pd.DataFrame,
-    theta_names: list[str],
-    IR_binds: list,
-    IC_binds: list,
-    figsize: tuple = (5, 5),
-    s: float = 20,
-    title: str | None = None,
-    path: str | None = None,
-    **kwargs,
-) -> None:
-    """the original scatterplot of binding constraints.
-
-    Args:
-        df_all_results: the dataframe of results
-        IR_binds: the list of types for which  IR binds
-        IC_binds: the list of pairs (i, j) for which i is indifferent between his contract and j's
-
-    Returns:
-        nothing. Just plots the constraints.
-    """
-    theta_mat = df_all_results[theta_names].values.round(2)
-    IC = "IC" if title else "IC binding"
-    IR = "IR" if title else "IR binding"
-    fig, ax = plt.subplots(
-        1, 1, figsize=figsize, subplot_kw=kwargs
-    )  # subplot_kw=dict(aspect='equal',)
-    _ = ax.scatter(
-        theta_mat[:, 0],
-        theta_mat[:, 1],
-        facecolors="w",
-        edgecolors="k",
-        s=s,
-        zorder=2.5,
-    )
-    _ = ax.scatter([], [], marker=">", c="k", label=IC)
-    _ = ax.scatter(
-        theta_mat[:, 0][IR_binds],
-        theta_mat[:, 1][IR_binds],
-        label=IR,
-        c="tab:green",
-        s=s,
-        zorder=2.5,
-    )
-    for i, j in IC_binds:
-        # if not (i in IR_binds or j in IR_binds):
-        _ = drawArrow(
-            ax,
-            theta_mat[i, 0],
-            theta_mat[j, 0],
-            theta_mat[i, 1],
-            theta_mat[j, 1],
-        )
-    _ = ax.set_xlabel(theta_names[0])
-    _ = ax.set_ylabel(theta_names[1])
-
-    if title is None:
-        _ = ax.legend(
-            bbox_to_anchor=(0.0, 1.02, 1.0, 0.102),
-            loc="lower left",
-            ncols=2,
-            mode="expand",
-            borderaxespad=0.0,
-        )
-    else:
-        _ = ax.set_title(title)
-        _ = ax.legend(bbox_to_anchor=(1.02, 1.0), loc="lower right")
-
-    if path is not None:
-        fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
