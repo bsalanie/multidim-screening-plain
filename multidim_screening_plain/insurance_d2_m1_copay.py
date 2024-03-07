@@ -7,13 +7,11 @@ from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
+from multidim_screening_plain.general_plots import (
+    general_plots,
+)
 from multidim_screening_plain.insurance_d2_m1_copay_plots import (
-    plot_best_contracts,
     plot_calibration,
-    plot_contract_models,
-    plot_contract_riskavs,
-    plot_second_best_contracts,
-    plot_utilities,
 )
 from multidim_screening_plain.insurance_d2_m1_copay_values import (
     S_penalties,
@@ -23,9 +21,6 @@ from multidim_screening_plain.insurance_d2_m1_copay_values import (
     proba_claim,
     val_D,
     val_I,
-)
-from multidim_screening_plain.plot_utils import (
-    display_variable_d2,
 )
 from multidim_screening_plain.utils import (
     contracts_vector,
@@ -318,8 +313,8 @@ def plot_results(model: ScreeningModel) -> None:
         pd.read_csv(model_resdir / "all_results.csv")
         .rename(
             columns={
-                "FB_y_0": "First-best copay",
-                "y_0": "Second-best copay",
+                "FB_y_0": "First-best Copay",
+                "y_0": "Second-best Copay",
                 "theta_0": "Risk-aversion",
                 "theta_1": "Risk location",
                 "FB_surplus": "First-best surplus",
@@ -330,67 +325,5 @@ def plot_results(model: ScreeningModel) -> None:
         .round(3)
     )
 
-    # first plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
-
-    display_variable_d2(
-        df_all_results,
-        variable="First-best copay",
-        theta_names=model.type_names,
-        cmap="viridis",
-        path=model_plotdir + "/first_best_deduc",
-    )
-
-    df_contracts = df_all_results[
-        [
-            "Risk-aversion",
-            "Risk location",
-            "First-best copay",
-            "Second-best copay",
-        ]
-    ]
-
-    df_first_and_second = pd.DataFrame(
-        {
-            "Model": np.concatenate(
-                (np.full(model.N, "First-best"), np.full(model.N, "Second-best"))
-            ),
-            "Risk-aversion": np.tile(df_contracts["Risk-aversion"].values, 2),
-            "Risk location": np.tile(df_contracts["Risk location"].values, 2),
-            "Copay": np.concatenate(
-                (
-                    df_contracts["First-best copay"],
-                    df_contracts["Second-best copay"],
-                )
-            ),
-        }
-    )
-
-    plot_contract_models(
-        df_first_and_second, "Copay", path=model_plotdir + "/copays_models"
-    )
-
-    plot_contract_riskavs(
-        df_first_and_second,
-        "Copay",
-        path=model_plotdir + "/copays_riskavs",
-    )
-
-    df_second = df_first_and_second.query('Model == "Second-best"')
-
-    plot_best_contracts(
-        df_first_and_second,
-        path=model_plotdir + "/optimal_contracts",
-    )
-
-    plot_second_best_contracts(
-        df_second,
-        title="Second-best contracts",
-        cmap="viridis",
-        path=model_plotdir + "/second_best_contracts",
-    )
-
-    plot_utilities(
-        df_all_results,
-        path=model_plotdir + "/utilities",
-    )
+    general_plots(model, df_all_results)
