@@ -316,9 +316,9 @@ def plot_results(model: ScreeningModel) -> None:
         pd.read_csv(model_resdir / "all_results.csv")
         .rename(
             columns={
-                "FB_y_0": "First-best deductible",
-                "y_0": "Second-best deductible",
-                "y_1": "Second-best copay",
+                "FB_y_0": "First-best Deductible",
+                "y_0": "Second-best Deductible",
+                "y_1": "Second-best Copay",
                 "theta_0": "Risk-aversion",
                 "theta_1": "Risk location",
                 "FB_surplus": "First-best surplus",
@@ -328,8 +328,9 @@ def plot_results(model: ScreeningModel) -> None:
         )
         .round(3)
     )
-    df_all_results.loc[:, "Second-best copay"] = np.clip(
-        df_all_results["Second-best copay"].values, 0.0, 1.0
+    df_all_results.loc[:, "First-best Copay"] = 0.0
+    df_all_results.loc[:, "Second-best Copay"] = np.clip(
+        df_all_results["Second-best Copay"].values, 0.0, 1.0
     )
 
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")

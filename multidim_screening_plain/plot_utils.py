@@ -120,30 +120,21 @@ def melt_for_plots(df_all_results: pd.DataFrame, model: ScreeningModel) -> pd.Da
     Returns:
         a new dataframe with first and second best contracts.
     """
-    d, m = model.d, model.m
+    theta_names, contract_names = model.type_names, model.contract_varnames
     df_first_and_second = pd.DataFrame(
         {
             "Model": np.concatenate(
                 (np.full(model.N, "First-best"), np.full(model.N, "Second-best"))
             ),
-            "theta_0": np.tile(df_all_results["theta_0"].values, 2),
-            "y_0": np.concatenate(
-                (
-                    df_all_results["First-best y_0"],
-                    df_all_results["Second-best y_0"],
-                )
-            ),
         }
     )
-    for i in range(1, d):
-        df_first_and_second[f"theta_{i}"] = np.tile(
-            df_all_results[f"theta_{i}"].values, 2
-        )
-    for j in range(1, m):
-        df_first_and_second[f"y_{j}"] = np.concatenate(
+    for theta_var in theta_names:
+        df_first_and_second[theta_var] = np.tile(df_all_results[theta_var].values, 2)
+    for contract_var in contract_names:
+        df_first_and_second[contract_var] = np.concatenate(
             (
-                df_all_results[f"First-best y_{j}"],
-                df_all_results[f"Second-best y_{j}"],
+                df_all_results[f"First-best {contract_var}"],
+                df_all_results[f"Second-best {contract_var}"],
             )
         )
     return df_first_and_second
@@ -262,6 +253,44 @@ def plot_constraints_d2(
 
     if path is not None:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
+
+
+def plot_utilities_d1(
+    df_all_results: pd.DataFrame,
+    theta_name: str,
+    title: str | None = None,
+    path: str | None = None,
+    **kwargs: dict | None,
+) -> alt.Chart:
+    df2 = df_all_results.copy()
+    df2["Profit"] = df2["Second-best surplus"] - df2["Informational rent"]
+    df2["Lost surplus"] = df2["First-best surplus"] - df2["Second-best surplus"]
+    df2m = pd.melt(
+        df2,
+        id_vars=[theta_name],
+        value_vars=["Informational rent", "Profit", "Lost surplus"],
+    )
+
+    our_colors = alt.Scale(
+        domain=["Informational rent", "Profit", "Lost surplus"],
+        range=["blue", "green", "red"],
+    )
+    ch = (
+        alt.Chart(df2m)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "Risk location:Q",
+                scale=alt.Scale(domain=set_axis(df2[theta_name].values)),
+            ),
+            y=alt.Y("value"),
+            color=alt.Color("variable", scale=our_colors),
+        )
+        .facet(facet="variable:N", columns=3)
+    )
+    if title:
+        ch.properties(title=title)
+    _maybe_save(ch, path)
 
 
 def plot_utilities_d2(
@@ -391,6 +420,42 @@ def plot_second_best_contracts_d2_m2(
     _ = fig.colorbar(scatter, label=cmap_label)
     if path is not None:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
+
+
+def plot_contract_models_d1(
+    df_first_and_second: pd.DataFrame,
+    varname: str,
+    theta_name: str,
+    path: str | None = None,
+    **kwargs,
+) -> alt.Chart:
+    """plots a contract variable for both first and second best
+    as a function of the type.
+
+    Args:
+        df_first_and_second: a dataframe
+        varname: the contract variable
+        theta_name: the name of the type in the dataframe
+        path: the path to save the plot
+        **kwargs: additional arguments to pass to the plot
+
+    Returns:
+        the two interactive scatterplots.
+    """
+    df = df_first_and_second
+    base = alt.Chart().encode(
+        x=alt.X(
+            f"{theta_name}:Q",
+            title=theta_name,
+            scale=alt.Scale(domain=set_axis(df[theta_name].values)),
+        ),
+        y=alt.Y(f"{varname}:Q"),
+        tooltip=[theta_name, varname],
+    )
+    ch_points = base.mark_point(filled=True, size=50)
+    ch_lines = base.mark_line(strokeWidth=0.5)
+    ch = alt.layer(ch_points, ch_lines, data=df).interactive().facet(column="Model:N")
+    _maybe_save(ch, path)
 
 
 def plot_contract_models_d2(

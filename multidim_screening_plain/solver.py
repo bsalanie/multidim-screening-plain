@@ -443,7 +443,7 @@ def solve(
         f.write(
             f"dual tol = {tol_dual:.2e}\n",
         )
-        if model.params and model.params_names:
+        if model.params is not None:
             params = cast(np.ndarray, model.params)
             params_names = cast(list, model.params_names)
             f.writelines(

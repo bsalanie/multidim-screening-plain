@@ -228,7 +228,7 @@ class ScreeningResults:
             + ["FB_surplus", "SB_surplus", "info_rents"]
         ]
 
-        if self.additional_results and self.additional_results_names:
+        if self.additional_results is not None:
             additional_results_names = cast(list, self.additional_results_names)
             additional_results = cast(list, self.additional_results)
             for name, res in zip(
@@ -252,7 +252,7 @@ class ScreeningResults:
         df_output.to_csv(model_resdir / "all_results.csv", index=False)
 
         # save the value of the parameters of the model
-        if model.params and model.params_names:
+        if model.params is not None:
             params_names = cast(list, model.params_names)
             params = cast(np.ndarray, model.params)
             df_params = pd.DataFrame()

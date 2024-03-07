@@ -7,10 +7,9 @@ from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
+from multidim_screening_plain.general_plots import general_plots
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_plots import (
     plot_calibration,
-    plot_deductible_models,
-    plot_utilities,
 )
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
     S_penalties,
@@ -320,32 +319,4 @@ def plot_results(model: ScreeningModel) -> None:
     # first plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
 
-    df_contracts = df_all_results[
-        [
-            "Risk location",
-            "First-best deductible",
-            "Second-best deductible",
-        ]
-    ]
-
-    df_first_and_second = pd.DataFrame(
-        {
-            "Model": np.concatenate(
-                (np.full(model.N, "First-best"), np.full(model.N, "Second-best"))
-            ),
-            "Risk location": np.tile(df_contracts["Risk location"].values, 2),
-            "Deductible": np.concatenate(
-                (
-                    df_contracts["First-best deductible"],
-                    df_contracts["Second-best deductible"],
-                )
-            ),
-        }
-    )
-
-    plot_deductible_models(df_first_and_second, path=model_plotdir + "/deducs_models")
-
-    plot_utilities(
-        df_all_results,
-        path=model_plotdir + "/utilities",
-    )
+    general_plots(model, df_all_results)
