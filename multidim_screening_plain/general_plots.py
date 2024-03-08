@@ -86,7 +86,6 @@ def general_plots(model: ScreeningModel, df_all_results: pd.DataFrame) -> None:
                 theta_names,
                 contract_names,
                 title="Second-best contracts",
-                cmap="viridis",
                 path=model_plotdir + "/second_best_contracts",
             )
 

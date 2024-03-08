@@ -322,6 +322,13 @@ def plot_results(model: ScreeningModel) -> None:
         )
         .round(3)
     )
+    # we set deductible at 0 if it is larger than 10
+    FB_y_0 = df_all_results["First-best Deductible"]
+    FB_y_0[FB_y_0 >= 10.0] = 0.0
+    df_all_results["First-best Deductible"] = FB_y_0
+    y_0 = df_all_results["Second-best Deductible"]
+    y_0[y_0 >= 10.0] = 0.0
+    df_all_results["Second-best Deductible"] = y_0
 
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
     general_plots(model, df_all_results)

@@ -305,8 +305,8 @@ def plot_results(model: ScreeningModel) -> None:
         pd.read_csv(model_resdir / "all_results.csv")
         .rename(
             columns={
-                "FB_y_0": "First-best deductible",
-                "y_0": "Second-best deductible",
+                "FB_y_0": "First-best Deductible",
+                "y_0": "Second-best Deductible",
                 "theta_0": "Risk location",
                 "FB_surplus": "First-best surplus",
                 "SB_surplus": "Second-best surplus",
@@ -315,6 +315,13 @@ def plot_results(model: ScreeningModel) -> None:
         )
         .round(3)
     )
+    # we set deductible at 0 if it is larger than 10
+    FB_y_0 = df_all_results["First-best Deductible"]
+    FB_y_0[FB_y_0 >= 10.0] = 0.0
+    df_all_results["First-best Deductible"] = FB_y_0
+    y_0 = df_all_results["Second-best Deductible"]
+    y_0[y_0 >= 10.0] = 0.0
+    df_all_results["Second-best Deductible"] = y_0
 
     # first plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")

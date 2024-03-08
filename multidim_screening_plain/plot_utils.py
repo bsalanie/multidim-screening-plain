@@ -329,6 +329,8 @@ def plot_utilities_d2(
         .properties(width=150, height=120)
         .facet(facet=f"{theta_var2}:N", columns=5)
     )
+    if title:
+        ch = ch.properties(title=title)
     _maybe_save(ch, path)
 
 
@@ -350,7 +352,7 @@ def plot_best_contracts_d2_m2(
         contract_names: the names of the contract variables in the dataframe
         title: the title of the plot
         path: the path to save the plot
-        **kwargs: additional arguments to pass to the plot
+        kwargs: additional arguments to pass to the plot
 
     Returns:
           the two interactive scatterplots.
@@ -395,7 +397,6 @@ def plot_second_best_contracts_d2_m2(
     theta_names: list[str],
     contract_names: list[str],
     title: str | None = None,
-    cmap=None,
     cmap_label: str | None = None,
     path: str | None = None,
     figsize: tuple[int, int] = (5, 5),
@@ -407,7 +408,8 @@ def plot_second_best_contracts_d2_m2(
     fig, ax = plt.subplots(1, 1, figsize=figsize, subplot_kw=kwargs)
     _ = ax.set_xlabel(theta_var1)
     _ = ax.set_ylabel(theta_var2)
-    _ = ax.set_title(title)
+    if title:
+        _ = ax.set_title(title)
     theta_mat = df_second[theta_names].values
     y_mat = df_second[contract_names].values
     min1, max1 = np.min(y_mat[:, 1]), np.max(y_mat[:, 1])
@@ -426,6 +428,7 @@ def plot_contract_models_d1(
     df_first_and_second: pd.DataFrame,
     varname: str,
     theta_name: str,
+    title: str | None = None,
     path: str | None = None,
     **kwargs: dict | None,
 ) -> alt.Chart:
@@ -436,8 +439,9 @@ def plot_contract_models_d1(
         df_first_and_second: a dataframe
         varname: the contract variable
         theta_name: the name of the type in the dataframe
+        title: a title for the plot
         path: the path to save the plot
-        **kwargs: additional arguments to pass to the plot
+        kwargs: additional arguments to pass to the plot
 
     Returns:
         the two interactive scatterplots.
@@ -455,6 +459,8 @@ def plot_contract_models_d1(
     ch_points = base.mark_point(filled=True, size=50)
     ch_lines = base.mark_line(strokeWidth=0.5)
     ch = alt.layer(ch_points, ch_lines, data=df).interactive().facet(column="Model:N")
+    if title:
+        ch = ch.properties(title=title)
     _maybe_save(ch, path)
 
 
@@ -462,6 +468,7 @@ def plot_contract_models_d2(
     df_first_and_second: pd.DataFrame,
     varname: str,
     theta_names: list[str],
+    title: str | None = None,
     path: str | None = None,
     **kwargs: dict | None,
 ) -> alt.Chart:
@@ -473,8 +480,9 @@ def plot_contract_models_d2(
         df_first_and_second: a dataframe
         varname: the contract variable
         theta_names: the names of the type characteristics in the dataframe
+        title: a title for the plot
         path: the path to save the plot
-        **kwargs: additional arguments to pass to the plot
+        kwargs: additional arguments to pass to the plot
 
     Returns:
         the two interactive scatterplots.
@@ -495,6 +503,8 @@ def plot_contract_models_d2(
     ch_points = base.mark_point(filled=True, size=50)
     ch_lines = base.mark_line(strokeWidth=0.5)
     ch = alt.layer(ch_points, ch_lines, data=df).interactive().facet(column="Model:N")
+    if title:
+        ch = ch.properties(title=title)
     _maybe_save(ch, path)
 
 
@@ -502,6 +512,7 @@ def plot_contract_by_type_d2(
     df_first_and_second: pd.DataFrame,
     varname: str,
     theta_names: list[str],
+    title: str | None = None,
     path: str | None = None,
     **kwargs: dict | None,
 ) -> alt.Chart:
@@ -513,8 +524,9 @@ def plot_contract_by_type_d2(
         df_first_and_second: a dataframe
         varname: the contract variable
         theta_names: the names of the type characteristics in the dataframe
+        title: a title for the plot
         path: the path to save the plot
-        **kwargs: additional arguments to pass to the plot
+        kwargs: additional arguments to pass to the plot
 
     Returns:
         as many interactive scatterplots as values of the first type characteristic.
@@ -539,4 +551,6 @@ def plot_contract_by_type_d2(
         .interactive()
         .facet(facet=f"{theta_var2}:N", columns=5)
     ).properties(title=f"Optimal {varname}")
+    if title:
+        ch = ch.properties(title=title)
     _maybe_save(ch, path)
