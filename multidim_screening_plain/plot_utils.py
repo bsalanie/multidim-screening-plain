@@ -147,7 +147,7 @@ def plot_y_range_m2(
     s: int = 20,
     title: str | None = None,
     path: str | None = None,
-    **kwargs,
+    **kwargs: dict | None,
 ) -> None:
     """the supposed stingray: the optimal contracts for both first and second best in contract space"""
     print(df_first_and_second.columns)
@@ -192,7 +192,7 @@ def plot_constraints_d2(
     s: float = 20,
     title: str | None = None,
     path: str | None = None,
-    **kwargs,
+    **kwargs: dict | None,
 ) -> None:
     """the original scatterplot of binding constraints.
 
@@ -427,7 +427,7 @@ def plot_contract_models_d1(
     varname: str,
     theta_name: str,
     path: str | None = None,
-    **kwargs,
+    **kwargs: dict | None,
 ) -> alt.Chart:
     """plots a contract variable for both first and second best
     as a function of the type.
@@ -463,7 +463,7 @@ def plot_contract_models_d2(
     varname: str,
     theta_names: list[str],
     path: str | None = None,
-    **kwargs,
+    **kwargs: dict | None,
 ) -> alt.Chart:
     """plots a contract variable for both first and second best
     as a function of the first type characteristic,
@@ -503,7 +503,7 @@ def plot_contract_by_type_d2(
     varname: str,
     theta_names: list[str],
     path: str | None = None,
-    **kwargs,
+    **kwargs: dict | None,
 ) -> alt.Chart:
     """plots the optimal value of a contract variable for both first and second best
     as a function of the first type characteristic,
