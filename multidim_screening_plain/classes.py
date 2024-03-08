@@ -21,28 +21,28 @@ class ScreeningModel:
 
 
     Attributes:
-        f: an $N$-vector with the numbers of individuals in each type
-        theta_mat: an $N \\times d$ matrix with the types
-        type_names: a list of $d$ strings with the names of the types
-        contract_varnames: a list of $m$ strings with the names of the contract variables
-        params: a $p$-vector with the parameters of the model
-        params_names: a list of $p$ strings with the names of the parameters
+        f: an `N`-vector with the numbers of individuals in each type
+        theta_mat: an `(N,d)` matrix with the types
+        type_names: a list of `d` strings with the names of the types
+        contract_varnames: a list of `m` strings with the names of the contract variables
+        params: a `p`-vector with the parameters of the model
+        params_names: a list of `p` strings with the names of the parameters
         m: the dimension of the contracts
         model_id: a string with the name of the model
         resdir: a Path to the directory where the results are stored
         plotdir: a Path to the directory where the plots are stored
         model_module: the module with the functions specific to the model
-        b_function: the function  that computes $b_i(y_j)$ for all $i,j=1,\\ldots,n$
-        S_function: the function that computes $S_i(y_i)$ for one type $i$
+        b_function: the function  that computes `b_i(y_j)` for all `i,j=1,...,n`
+        S_function: the function that computes `S_i(y_i)` for one type `i`
         proximal_operator_surplus: the proximal operator of the surplus
         N: the number of types
         d: their dimension
         v0: the initial values of the dual variables
         y_init: the initial values of the contracts
         free_y: the indices of the  contracts over which we optimize
-        norm_lLambda: the norm of the $\\Lambda$ function
-        M: the value of the $M$ parameter (for the step size)
-        FB_y: thefirst-best contracts for the $N$ types
+        norm_lLambda: the norm of the `Lambda` function
+        M: the value of the `M` parameter (for the step size)
+        FB_y: thefirst-best contracts for the `N` types
         precalculated_values: a dictionary with values that do not depend on the
             contracts and therefore can be calculated before the optimization.
     """

@@ -24,13 +24,13 @@ from multidim_screening_plain.utils import (
 
 
 def construct_D(N: int) -> tuple[sparse.csr_matrix, float]:
-    """Constructs the matrix $D$ and the step size for the projection
+    """Constructs the matrix `D` and the step size for the projection
 
     Args:
         N: number of types
 
     Returns:
-        D: the $(N^2, N)$ matrix $D$
+        D: the `(N^2, N)` matrix `D`
         gamma_proj: the step size
     """
     D = sparse.vstack(
@@ -57,14 +57,14 @@ def construct_D(N: int) -> tuple[sparse.csr_matrix, float]:
 
 
 def JLambda(model: ScreeningModel, y: np.ndarray) -> np.ndarray:
-    """computes $\\Lambda^\\prime_{ij}(y) = b^\\prime_i(y_j)-b^\\prime_j(y_j)$
+    """computes `Lambda'_{ij}(y) = b'_i(y_j)-b'_j(y_j)`
 
     Args:
         model: the ScreeningModel
-        y: the contracts for all types, an array of size $m N$
+        y: the contracts for all types, an array of size `m N`
 
     Returns:
-        an $(m, N, N)$ array.
+        an `(m, N, N)` array.
     """
     b_function = model.b_function
     N, m = model.N, model.m
@@ -111,7 +111,7 @@ def get_first_best(model: ScreeningModel) -> np.ndarray:
 
 
 def D_mul(v: np.ndarray) -> np.ndarray:
-    """computes $D v$
+    """computes `D v`
 
     Args:
         v: an `N`-vector
@@ -139,13 +139,13 @@ def nlLambda(
     model: ScreeningModel,
     y: np.ndarray,
 ) -> Any:
-    """computes $\\Lambda_{ij}(y) = b_i(y_j)-b_j(y_j)$
+    """computes `Lambda_{ij}(y) = b_i(y_j)-b_j(y_j)`
 
     Args:
-        y: the contracts, a vector of size $m N$ (`y_0` then `y_1` etc)
+        y: the contracts, a vector of size `m N` (`y_0` then `y_1` etc)
 
     Returns:
-        an $(N,N)$ matrix.
+        an `(N,N)` matrix.
     """
     b_function = model.b_function
     N = model.N
@@ -205,18 +205,18 @@ def prox_minusS(
     fix_top: bool = False,
     free_y: list | None = None,
 ) -> np.ndarray:
-    """Proximal operator of -S(y) = sum_i f_i H(y_i, theta_i)
+    """Proximal operator of `-S(y) = sum_i f_i H(y_i, theta_i)`
 
     Args:
         model: the model
         z: an `m N`-vector
-        y_current: the current value of the`m*N` vector of contracts
+        y_current: the current value of the `m N` vector of contracts
         tau: scale factor
         fix_top: True if first-best imposed at top
         free_y: a list of types for which we optimize over contracts
 
     Returns:
-        the minimizing `y`, a $2 N$-vector
+        the minimizing `y`, an `m N`-vector
     """
     theta_mat = model.theta_mat
     N = theta_mat.shape[0]
@@ -264,7 +264,7 @@ def proj_K(
     atol_proj: float = 1e-6,
     rtol_proj: float = 1e-4,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, int] | None:
-    """Projection of $w$ onto $K$ by Fast Projected Gradient
+    """Projection of `w` onto `K` by Fast Projected Gradient
 
     Args:
         model: the model
@@ -486,14 +486,14 @@ def solve(
 
 
 def make_LTv(v_mat: np.ndarray, JLy: np.ndarray) -> np.ndarray:
-    """creates $(\\Lambda^\\prime(y))^\ast v$
+    """creates `(Lambda'(y))* v`
 
     Args:
         v_mat: an `(N, N)` matrix
         JLy: an `(m,N,N)` array
 
     Returns:
-        an $m N$-vector
+        an `m N`-vector
     """
     m, N = JLy.shape[:-1]
     LTv = np.empty(m * N)
@@ -509,16 +509,17 @@ def compute_utilities(
     results: ScreeningResults,
     tol_fp: float = 1e-6,
 ) -> ThreeArrays:
-    """Computes the rents for each type using the iterative algorithm $T_{\\Lambda}$ of Prop 2
+    """Computes the rents for each type using the iterative algorithm `T_{Lambda}`
+      of Prop 2
 
     Args:
         results: ScreeningResults
         tol_fp: tolerance for fixed point
 
     Returns:
-        S_first: an $N$-vector of the values of the joint surplus in the first-best
-        U_second: an $N$-vector of informational rents in the second-best
-        S_second: an $N$-vector of the values of the joint surplus in the second-best
+        S_first: an `N`-vector of the values of the joint surplus in the first-best
+        U_second: an `N`-vector of informational rents in the second-best
+        S_second: an `N`-vector of the values of the joint surplus in the second-best
     """
     model = results.model
     N = model.N

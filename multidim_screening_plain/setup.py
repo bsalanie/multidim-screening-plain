@@ -1,14 +1,20 @@
 """This sets up the model based in the configuration read from `config.env`.
+
 A module `model_name.py` should provide the model-dependent functions and parameters:
+
 - `create_initial_contracts`: initial values for the contracts, and chooses the
 types for whom we optimize contracts
-- `precalculate`: computes some values that do not depend on the contracts (can be empty)
-- `b_fun`: computes $b_i(y_j)$ for all pairs of types $i$ and  contracts $y_j$
-- `db_fun`: its derivatives wrt to all dimensions of the contracts
-- `S_fun`: computes $S_i(y_i)$ for a type $i$ and their contract $y_i$
-- `dS_fun`: its derivatives wrt to all dimensions of the contracts
+
+- `b_fun`: computes `b_i(y_j)` for all pairs of types `i` and  contracts `y_j`, and
+its derivatives wrt to all dimensions of the contracts
+
+- `S_fun`: computes `S_i(y_i)` for a type `i` and their contract `y_i`, and
+its derivatives wrt to all dimensions of the contract
+
 - `proximal_operator`: the proximal operator of the surplus function
+
 - `additional_results`: additional results to be added to the `ScreeningResults` object
+
 - `plot_results`: plots the results.
 
 We use `importlib` to import the model-dependent module.

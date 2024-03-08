@@ -12,7 +12,9 @@ nav:
     - Classes: classes.md
     - Model setup: setup.md
     - Solver: solver.md
+    - General plots: general_plots.md
     - Utility code: utils.md
+    - Plotting utilities: plot_utils.md
 
 plugins:
   - search
