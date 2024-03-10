@@ -1,0 +1,5 @@
+N = 400, tau = 4.30e-03, sig = 4.30e-03, step ratio = 1.0, primal tol = 2.83e-04, dual tol = 4.00e-03
+w = 1.0, R = 1.0, eta = 1.0
+convergence = False, iterations = 10000, elapsed time = 0:04:45.927643
+primal residual = 5.54e+02 tol,  dual residual = 1.63e+02 tol
+

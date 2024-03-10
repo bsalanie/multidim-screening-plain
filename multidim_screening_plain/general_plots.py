@@ -39,6 +39,14 @@ def general_plots(model: ScreeningModel, df_all_results: pd.DataFrame) -> None:
                 cmap="viridis",
                 path=model_plotdir + f"/first_best_{contract_var}",
             )
+            # now plot the second best
+            display_variable_d2(
+                df_all_results,
+                f"Second-best {contract_var}",
+                theta_names,
+                cmap="viridis",
+                path=model_plotdir + f"/second_best_{contract_var}",
+            )
             # now plot both together
             plot_contract_models_d2(
                 df_first_and_second,

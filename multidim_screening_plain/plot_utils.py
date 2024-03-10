@@ -100,7 +100,10 @@ def display_variable_d2(
     _ = ax.set_ylabel(theta_names[1])
     _ = ax.set_title(title)
     scatter = ax.scatter(
-        theta_mat[:, 0], theta_mat[:, 1], c=df_all_results[variable].values, cmap=cmap
+        theta_mat[:, 0],
+        theta_mat[:, 1],
+        c=df_all_results[variable].values,
+        cmap=cmap,
     )
     _ = fig.colorbar(scatter, label=variable)
     if title is not None:

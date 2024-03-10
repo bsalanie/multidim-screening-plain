@@ -242,6 +242,7 @@ def proximal_operator(
         prox_grad,
         x_init=y_init,
         args=[],
+        bounds=[(0.0, 15.0)],
     )
 
     if mini.success or mini.status == 2:

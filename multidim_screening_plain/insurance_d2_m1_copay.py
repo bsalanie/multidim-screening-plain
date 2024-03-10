@@ -240,10 +240,7 @@ def proximal_operator(
     # bs_error_abort("done")
 
     mini = minimize_free(
-        prox_obj,
-        prox_grad,
-        x_init=y_init,
-        args=[],
+        prox_obj, prox_grad, x_init=y_init, args=[], bounds=[(0.0, 1.0)]
     )
 
     if mini.success or mini.status == 2:

@@ -8,7 +8,7 @@ from multidim_screening_plain.setup import setup_model
 
 @fixture
 def build_model():
-    config_file = "insurance_d2_m1_copay"
+    config_file = "jointtax_d2_m2"
     config = dotenv_values(
         Path.cwd() / "multidim_screening_plain" / f"config_{config_file}.env"
     )
