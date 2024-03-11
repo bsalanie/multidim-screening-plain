@@ -2,11 +2,9 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
-import pandas as pd
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.general_plots import general_plots
 from multidim_screening_plain.utils import (
     check_args,
     contracts_vector,
@@ -145,33 +143,37 @@ def proximal_operator(
         return theta
 
 
-def add_results(
-    results: ScreeningResults,
-) -> None:
-    """Adds more results to the `ScreeningResults` object
+def adjust_excluded(results: ScreeningResults) -> None:
+    """Adjusts the results for the excluded types, or just `pass`
 
     Args:
         results: the results
     """
-    return None
+    FBs, SBs = results.FB_surplus, results.SB_surplus
+    EPS = 0.001
+    excluded_types = np.where(SBs / FBs < EPS, True, False).tolist()
+    results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
+    n_excluded = np.sum(excluded_types)
+    results.SB_y[excluded_types] = np.zeros((n_excluded, 2))
+    results.excluded_types = excluded_types
 
 
-def plot_results(model: ScreeningModel) -> None:
-    model_resdir = cast(Path, model.resdir)
-    df_all_results = (
-        pd.read_csv(model_resdir / "all_results.csv")
-        .rename(
-            columns={
-                "FB_y_0": "First-best y_0",
-                "FB_y_1": "First-best y_1",
-                "y_0": "Second-best y_0",
-                "y_1": "Second-best y_1",
-                "FB_surplus": "First-best surplus",
-                "SB_surplus": "Second-best surplus",
-                "info_rents": "Informational rent",
-            }
-        )
-        .round(3)
-    )
+def add_results(
+    results: ScreeningResults,
+) -> None:
+    """Adds more results to the `ScreeningResults` object if needed;
+    otherwise just `pass`
 
-    general_plots(model, df_all_results)
+    Args:
+        results: the results
+    """
+    pass
+
+
+def additional_plots(model: ScreeningModel) -> None:
+    """Adds more plots if needed; otherwise just `pass`
+
+    Args:
+        model: the ScreeningModel
+    """
+    pass

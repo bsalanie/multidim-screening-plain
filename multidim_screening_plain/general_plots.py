@@ -18,16 +18,17 @@ from multidim_screening_plain.plot_utils import (
     plot_utilities_d1,
     plot_utilities_d2,
     plot_y_range_m2,
+    setup_for_plots,
 )
 
 
-def general_plots(model: ScreeningModel, df_all_results: pd.DataFrame) -> None:
-    theta_names = model.type_names
-    contract_names = model.contract_varnames
-    model_plotdir = str(cast(Path, model.plotdir))
+def general_plots(model: ScreeningModel) -> tuple[pd.DataFrame, str]:
     model_resdir = str(cast(Path, model.resdir))
+    df_all_results, model_plotdir = setup_for_plots(model)
     d, m = model.d, model.m
     df_first_and_second = melt_for_plots(df_all_results, model)
+    theta_names = model.type_names
+    contract_names = model.contract_varnames
 
     if d == 2:
         for contract_var in contract_names:
@@ -126,3 +127,5 @@ def general_plots(model: ScreeningModel, df_all_results: pd.DataFrame) -> None:
         )
     else:
         bs_error_abort(f"plots for types of dimension {d} are not implemented yet.")
+
+    return df_all_results, model_plotdir

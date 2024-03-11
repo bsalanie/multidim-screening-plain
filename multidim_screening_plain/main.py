@@ -1,5 +1,8 @@
-"""Example with two-dimensional types (sigma=risk-aversion, delta=risk)
-and two-dimensional contracts  (y0=deductible, y1=proportional copay)
+"""Driver for the multidimensional screening program;
+use as `python3 main.py config_file` where `config_file` is the name of the configuration file,
+e.g. `insurance_d2_m2` for the insurance example with 2 dimensional types and contracts.
+
+The driver program expects to find the model-specific code in `modelname.py`.
 """
 
 from pathlib import Path
@@ -9,6 +12,7 @@ import click
 import pandas as pd
 from dotenv import dotenv_values
 
+from multidim_screening_plain.general_plots import general_plots
 from multidim_screening_plain.setup import setup_model
 from multidim_screening_plain.solver import (
     JLambda,
@@ -72,6 +76,13 @@ def main(config_file):
 
         S_first, U_second, S_second = compute_utilities(results)
         results.add_utilities(S_first, U_second, S_second)
+
+        # you may not want to do anything for excluded types;
+        #   then just return `pass` from `module.adjust_excluded`
+        module.adjust_excluded(results)
+
+        # you may not want any additional results;
+        #   then just return `pass` from `module.add_results`
         module.add_results(results)
 
         results.output_results()
@@ -81,7 +92,11 @@ def main(config_file):
         # print(results)
 
     if do_plots:
-        module.plot_results(model)
+        general_plots(model)
+
+        # you may not want any additional plots;
+        #   then just return `pass` from `module.add_itional_plots`
+        module.additional_plots(model)
 
 
 if __name__ == "__main__":

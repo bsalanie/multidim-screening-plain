@@ -42,9 +42,7 @@ class ScreeningModel:
         free_y: the indices of the  contracts over which we optimize
         norm_lLambda: the norm of the `Lambda` function
         M: the value of the `M` parameter (for the step size)
-        FB_y: thefirst-best contracts for the `N` types
-        precalculated_values: a dictionary with values that do not depend on the
-            contracts and therefore can be calculated before the optimization.
+        FB_y: the first-best contracts for the `N` types
     """
 
     f: np.ndarray
@@ -68,7 +66,6 @@ class ScreeningModel:
     norm_Lambda: float = field(init=False)
     M: float = field(init=False)
     FB_y: np.ndarray = field(init=False)
-    precalculated_values: dict = field(init=False)
 
     params: np.ndarray | None = None  # the parameters of the model
     params_names: list | None = None
@@ -96,10 +93,6 @@ class ScreeningModel:
 
     def rescale_step(self, mult_fac: float) -> None:
         self.M = 2.0 * (self.N - 1) * mult_fac
-
-    def precalculate(self) -> dict:
-        self.precalculated_values = self.model_module.precalculate_values()
-        return self.precalculated_values
 
     def __repr__(self) -> str:
         clstr = f"\nModel {self.model_id}: {self.N} {self.d}-dimensional types:\n"
@@ -137,6 +130,7 @@ class ScreeningResults:
     SB_surplus: np.ndarray = field(init=False)
     additional_results: list | None = None
     additional_results_names: list | None = None
+    excluded_types: list[bool] = field(init=False)
 
     def add_utilities(
         self, S_first: np.ndarray, U_second: np.ndarray, S_second: np.ndarray

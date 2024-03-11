@@ -2,12 +2,10 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
-import pandas as pd
 from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.general_plots import general_plots
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_plots import (
     plot_calibration,
 )
@@ -20,6 +18,7 @@ from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
     val_D,
     val_I,
 )
+from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import contracts_vector
 
 
@@ -153,7 +152,7 @@ def create_initial_contracts(
         set_fixed_y: set[int] = set()
         set_not_insured: set[int] = set()
         free_y = list(range(N))
-    else:
+    else:  # not insured if deductible >= 10
         model_resdir = cast(Path, model.resdir)
         y_init = np.loadtxt(model_resdir / "current_y.txt")
         EPS = 0.001
@@ -227,7 +226,6 @@ def proximal_operator(
 
     y_init = np.array([1.0]) if t is None else z
 
-    # if t is not None:
     #     check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
     #     bs_error_abort("done")
 
@@ -246,6 +244,22 @@ def proximal_operator(
         print(f"{mini.message}")
         bs_error_abort(f"Minimization did not converge: status {mini.status}")
         return None
+
+
+def adjust_excluded(results: ScreeningResults) -> None:
+    """Adjusts the results for the excluded types, or just `pass`
+
+    Args:
+        results: the results
+    """
+    deduc = results.SB_y[:, 0]
+    EPS = 0.001
+    MAX_DEDUC = 5.0
+    excluded_types = np.where(deduc > MAX_DEDUC - EPS, True, False).tolist()
+    results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
+    n_excluded = np.sum(excluded_types)
+    results.SB_y[excluded_types, 0] = np.full(n_excluded, MAX_DEDUC)
+    results.excluded_types = excluded_types
 
 
 def add_results(
@@ -299,32 +313,8 @@ def add_results(
     ]
 
 
-def plot_results(model: ScreeningModel) -> None:
-    model_resdir = cast(Path, model.resdir)
-    model_plotdir = str(cast(Path, model.plotdir))
-    df_all_results = (
-        pd.read_csv(model_resdir / "all_results.csv")
-        .rename(
-            columns={
-                "FB_y_0": "First-best Deductible",
-                "y_0": "Second-best Deductible",
-                "theta_0": "Risk location",
-                "FB_surplus": "First-best surplus",
-                "SB_surplus": "Second-best surplus",
-                "info_rents": "Informational rent",
-            }
-        )
-        .round(3)
-    )
-    # we set deductible at 0 if it is larger than 10
-    FB_y_0 = df_all_results["First-best Deductible"]
-    FB_y_0[FB_y_0 >= 10.0] = 0.0
-    df_all_results["First-best Deductible"] = FB_y_0
-    y_0 = df_all_results["Second-best Deductible"]
-    y_0[y_0 >= 10.0] = 0.0
-    df_all_results["Second-best Deductible"] = y_0
+def additional_plots(model: ScreeningModel) -> None:
+    df_all_results, model_plotdir = setup_for_plots(model)
 
-    # first plot the first best
+    # plot the first best
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
-
-    general_plots(model, df_all_results)

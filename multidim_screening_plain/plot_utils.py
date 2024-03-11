@@ -1,5 +1,6 @@
 """Plotting utilities"""
 
+from pathlib import Path
 from typing import Any, cast
 
 import altair as alt
@@ -93,9 +94,7 @@ def display_variable_d2(
     **kwargs: dict | None,
 ) -> None:
     theta_mat = df_all_results[theta_names].values
-    fig, ax = plt.subplots(
-        1, 1, figsize=figsize, subplot_kw=kwargs
-    )  # subplot_kw=dict(aspect='equal',)
+    fig, ax = plt.subplots(1, 1, figsize=figsize, subplot_kw=kwargs)
     _ = ax.set_xlabel(theta_names[0])
     _ = ax.set_ylabel(theta_names[1])
     _ = ax.set_title(title)
@@ -111,6 +110,31 @@ def display_variable_d2(
 
     if path is not None:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
+
+
+def setup_for_plots(model: ScreeningModel) -> tuple[pd.DataFrame, str]:
+    model_resdir = cast(Path, model.resdir)
+    model_plotdir = cast(Path, model.plotdir)
+    df_all = pd.read_csv(model_resdir / "all_results.csv")
+    theta_names, contract_names = model.type_names, model.contract_varnames
+    for j, contract_var in enumerate(contract_names):
+        df_all.rename(
+            columns={
+                f"FB_y_{j}": f"First-best {contract_var}",
+                f"y_{j}": f"Second-best {contract_var}",
+            },
+            inplace=True,
+        )
+    for i, theta_var in enumerate(theta_names):
+        df_all.rename(columns={f"theta_{i}": theta_var}, inplace=True)
+    df_all_results = df_all.rename(
+        columns={
+            "FB_surplus": "First-best surplus",
+            "SB_surplus": "Second-best surplus",
+            "info_rents": "Informational rent",
+        }
+    ).round(3)
+    return df_all_results, str(model_plotdir)
 
 
 def melt_for_plots(df_all_results: pd.DataFrame, model: ScreeningModel) -> pd.DataFrame:
@@ -153,8 +177,6 @@ def plot_y_range_m2(
     **kwargs: dict | None,
 ) -> None:
     """the supposed stingray: the optimal contracts for both first and second best in contract space"""
-    print(df_first_and_second.columns)
-    print(contract_names)
     first = df_first_and_second.query('Model == "First-best"')[contract_names]
     second = df_first_and_second.query('Model == "Second-best"')[contract_names]
 
@@ -203,7 +225,6 @@ def plot_constraints_d2(
         df_all_results: the dataframe of results
         IR_binds: the list of types for which  IR binds
         IC_binds: the list of pairs (i, j) for which i is indifferent between his contract and j's
-
     Returns:
         nothing. Just plots the constraints.
     """

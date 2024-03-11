@@ -2,13 +2,12 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
-import pandas as pd
 import scipy.optimize as spopt
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.general_plots import general_plots
 from multidim_screening_plain.jointtax_d2_m2_plots import plot_marginal_tax_rate
+from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import (
     check_args,
     contracts_vector,
@@ -190,28 +189,8 @@ def add_results(results: ScreeningResults):
     pass
 
 
-def plot_results(model: ScreeningModel) -> None:
-    model_resdir = cast(Path, model.resdir)
-    model_plotdir = cast(Path, model.plotdir)
-    df_all_results = (
-        pd.read_csv(model_resdir / "all_results.csv")
-        .rename(
-            columns={
-                "FB_y_0": "First-best Savings",
-                "FB_y_1": "First-best Hours",
-                "y_0": "Second-best Savings",
-                "y_1": "Second-best Hours",
-                "theta_0": "Endowment",
-                "theta_1": "Disutility",
-                "FB_surplus": "First-best surplus",
-                "SB_surplus": "Second-best surplus",
-                "info_rents": "Informational rent",
-            }
-        )
-        .round(3)
-    )
-
-    general_plots(model, df_all_results)
+def additional_plots(model: ScreeningModel) -> None:
+    df_all_results, model_plotdir = setup_for_plots(model)
 
     plot_marginal_tax_rate(
         df_all_results,

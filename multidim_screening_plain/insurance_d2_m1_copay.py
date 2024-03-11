@@ -2,14 +2,10 @@ from pathlib import Path
 from typing import cast
 
 import numpy as np
-import pandas as pd
 from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.general_plots import (
-    general_plots,
-)
 from multidim_screening_plain.insurance_d2_m1_copay_plots import (
     plot_calibration,
 )
@@ -22,31 +18,10 @@ from multidim_screening_plain.insurance_d2_m1_copay_values import (
     val_D,
     val_I,
 )
+from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import (
     contracts_vector,
 )
-
-###
-###### this was a failed attempt to save execution time
-######
-# def precalculate(model: ScreeningModel) -> None:
-#     theta_mat = model.theta_mat
-#     sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-#     s = cast(np.ndarray, model.params)[0]
-#     values_A = val_A(deltas, s)
-#     sigmas_s = s * sigmas
-#     argu1 = deltas / s + sigmas_s
-#     cdf1 = bs_norm_cdf(argu1)
-#     val_expB = np.exp(sigmas * (s * sigmas_s / 2.0 + deltas))
-#     model.precalculated_values = {
-#         "values_A": cast(np.ndarray, values_A),
-#         "argu1": cast(np.ndarray, argu1),
-#         "cdf1": cast(np.ndarray, cdf1),
-#         "val_expB": cast(np.ndarray, val_expB),
-#     }
-#     y_no_insurance = np.array([0.0, 1.0])
-#     I_no_insurance = val_I(model, y_no_insurance)  # [:, 0]
-#     model.precalculated_values["I_no_insurance"] = cast(np.ndarray, I_no_insurance)
 
 
 def b_fun(
@@ -87,12 +62,7 @@ def b_fun(
     else:
         theta_mat = model.theta_mat
         sigmas = theta_mat[:, 0]
-        # precalculated_values = model.precalculated_values
-        # value_non_insured = precalculated_values["I_no_insurance"]
-        # print(f"precalc: {value_non_insured}")
         value_non_insured = val_I(model, y_no_insur)
-        # # print(f"calc: {value_non_insured}")
-        # assert np.allclose(value_non_insured, value_non_insured_calc)
         value_insured = val_I(model, y, gr=gr)
         if not gr:
             diff_logs = np.log(value_non_insured) - np.log(value_insured)
@@ -174,10 +144,9 @@ def create_initial_contracts(
         list(set_fixed_y)
         free_y = list(set_free_y)
         not_insured = list(set_not_insured)
-        # only_deductible = list(set_only_deductible)
-        rng = np.random.default_rng(645)
 
-        MIN_Y0, MAX_Y0 = 0.3, 1.0
+        rng = np.random.default_rng(645)
+        MIN_Y0, MAX_Y0 = 0.0, 1.0
         y_init = cast(np.ndarray, y_init)
         perturbation = 0.001
         y_init = np.clip(y_init + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
@@ -252,10 +221,25 @@ def proximal_operator(
         return None
 
 
+def adjust_excluded(results: ScreeningResults) -> None:
+    """Adjusts the results for the excluded types, or just `pass`
+
+    Args:
+        results: the results
+    """
+    copay = results.SB_y[:, 0]
+    EPS = 0.001
+    excluded_types = np.where(copay > 1.0 - EPS, True, False).tolist()
+    results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
+    n_excluded = np.sum(excluded_types)
+    results.SB_y[excluded_types, 0] = np.ones(n_excluded)
+    results.excluded_types = excluded_types
+
+
 def add_results(
     results: ScreeningResults,
 ) -> None:
-    """Adds more results to the `ScreeningResults` object
+    """Adds more results to the `ScreeningResults` object, or just code `pass`
 
     Args:
         results: the results
@@ -303,24 +287,6 @@ def add_results(
     ]
 
 
-def plot_results(model: ScreeningModel) -> None:
-    model_resdir = cast(Path, model.resdir)
-    model_plotdir = str(cast(Path, model.plotdir))
-    df_all_results = (
-        pd.read_csv(model_resdir / "all_results.csv")
-        .rename(
-            columns={
-                "FB_y_0": "First-best Copay",
-                "y_0": "Second-best Copay",
-                "theta_0": "Risk-aversion",
-                "theta_1": "Risk location",
-                "FB_surplus": "First-best surplus",
-                "SB_surplus": "Second-best surplus",
-                "info_rents": "Informational rent",
-            }
-        )
-        .round(3)
-    )
-
+def additional_plots(model: ScreeningModel) -> None:
+    df_all_results, model_plotdir = setup_for_plots(model)
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")
-    general_plots(model, df_all_results)

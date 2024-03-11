@@ -2,3 +2,7 @@ N = 400, tau = 8.24e-03, sig = 8.24e-03, step ratio = 1.0, primal tol = 2.83e-05
 convergence = False, iterations = 100000, elapsed time = 0:08:44.766077
 primal residual = 4.94e+01 tol,  dual residual = 1.73e+02 tol
 
+N = 400, tau = 8.24e-03, sig = 8.24e-03, step ratio = 1.0, primal tol = 2.83e-05, dual tol = 4.00e-04
+convergence = False, iterations = 100000, elapsed time = 0:13:48.658081
+primal residual = 1.32e+01 tol,  dual residual = 1.11e+02 tol
+

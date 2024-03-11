@@ -39,3 +39,28 @@ s = 4.0, loading = 0.25
 convergence = True, iterations = 422, elapsed time = 0:00:01.149282
 primal residual = 1.00e+00 tol,  dual residual = 5.40e-01 tol
 
+N = 25, tau = 2.68e-01, sig = 2.68e-01, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 4.0, loading = 0.25
+convergence = False, iterations = 2000, elapsed time = 0:00:16.873607
+primal residual = 7.76e+01 tol,  dual residual = 1.09e+02 tol
+
+N = 25, tau = 4.55e-02, sig = 4.55e-02, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 42437, elapsed time = 0:02:35.116701
+primal residual = 1.00e+00 tol,  dual residual = 3.87e-01 tol
+
+N = 25, tau = 4.47e-02, sig = 4.47e-02, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 95, elapsed time = 0:00:00.265928
+primal residual = 9.95e-01 tol,  dual residual = 7.43e-01 tol
+
+N = 25, tau = 4.47e-02, sig = 4.47e-02, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 95, elapsed time = 0:00:00.262323
+primal residual = 9.95e-01 tol,  dual residual = 7.43e-01 tol
+
+N = 25, tau = 4.47e-02, sig = 4.47e-02, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 4.0, loading = 0.25
+convergence = True, iterations = 95, elapsed time = 0:00:00.265584
+primal residual = 9.95e-01 tol,  dual residual = 7.43e-01 tol
+
