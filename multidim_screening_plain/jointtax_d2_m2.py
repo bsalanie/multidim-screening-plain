@@ -3,7 +3,7 @@ from typing import cast
 
 import numpy as np
 import pandas as pd
-from bs_python_utils.bs_opt import minimize_free
+import scipy.optimize as spopt
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
@@ -118,21 +118,9 @@ def create_initial_contracts(
         if y_first_best_mat is None:
             bs_error_abort("We start from the first best but y_first_best_mat is None")
         y_init = contracts_vector(cast(np.ndarray, y_first_best_mat))
-        set_fixed_y: set[int] = set()
-        set_not_insured: set[int] = set()
-        free_y = list(range(N))
     else:
         model_resdir = cast(Path, model.resdir)
         y_init = np.loadtxt(model_resdir / "current_y.txt")
-        EPS = 0.001
-        set_not_insured = {i for i in range(N) if y_init[i, 1] > 1.0 - EPS}
-        set_fixed_y = set_not_insured
-
-        set_free_y = set(range(N)).difference(set_fixed_y)
-        list(set_fixed_y)
-        free_y = list(set_free_y)
-        not_insured = list(set_not_insured)
-        # only_deductible = list(set_only_deductible)
         rng = np.random.default_rng(645)
 
         MIN_Y0, MAX_Y0 = -np.inf, np.inf
@@ -141,11 +129,11 @@ def create_initial_contracts(
         perturbation = 0.001
         yinit_0 = np.clip(y_init[:, 0] + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
         yinit_1 = np.clip(y_init[:, 1] + rng.normal(0, perturbation, N), MIN_Y1, MAX_Y1)
-        yinit_0[not_insured] = 0.0
-        yinit_1[not_insured] = 1.0
 
         y_init = cast(np.ndarray, np.concatenate((yinit_0, yinit_1)))
         model.v0 = np.loadtxt(model_resdir / "current_v.txt")
+
+    free_y = list(range(N))
 
     return y_init, free_y
 
@@ -168,53 +156,34 @@ def proximal_operator(
     Returns:
         the minimizing `y`, a 2-vector
     """
-
-    def prox_obj_and_grad(
-        y: np.ndarray, args: list, gr: bool = False
-    ) -> float | tuple[float, np.ndarray]:
-        S_vals = S_fun(model, y, theta=theta, gr=gr)
-        if not gr:
-            obj = -S_vals
-            if t is not None:
-                dyz = y - z
-                dist_yz2 = np.sum(dyz * dyz)
-                obj += dist_yz2 / (2 * t)
-            return cast(float, obj)
-        if gr:
-            obj, grad = -S_vals[0], -S_vals[1]
-            if t is not None:
-                dyz = y - z
-                dist_yz2 = np.sum(dyz * dyz)
-                obj += dist_yz2 / (2 * t)
-                grad += dyz / t
-            return cast(float, obj), cast(np.ndarray, grad)
-
-    def prox_obj(y: np.ndarray, args: list) -> float:
-        return cast(float, prox_obj_and_grad(y, args, gr=False))
-
-    def prox_grad(y: np.ndarray, args: list) -> np.ndarray:
-        return cast(tuple[float, np.ndarray], prox_obj_and_grad(y, args, gr=True))[1]
-
-    y_init = np.array([theta[0], 1.0]) if t is None else z
-
-    # check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
-    # bs_error_abort("done")
-
-    mini = minimize_free(
-        prox_obj,
-        prox_grad,
-        x_init=y_init,
-        args=[],
-        bounds=[(-np.inf, np.inf), (0.0, 1.0)],
-    )
-
-    if mini.success or mini.status == 2:
-        y = mini.x
-        return cast(np.ndarray, y)
+    params = cast(np.ndarray, model.params)
+    w, R, eta = params
+    endowment, disutility = theta
+    if t is None:
+        savings = endowment + np.log(R) / eta
+        hours = 1.0
+        y = np.array([savings, hours])
+        return y
     else:
-        print(f"{mini.message}")
-        bs_error_abort(f"Minimization did not converge: status {mini.status}")
-        return None
+        s0, l0 = cast(np.ndarray, z)
+        # util_l0 = - l0 * l0 / (2 * t)
+        # util_l1 = w - disutility - (1.0 - l0)**2 / (2 * t)
+        # hours = 1.0 if (util_l1 >= util_l0) else 0.0
+        hours = np.clip(l0 + t * (w - disutility), 0.0, 1.0)
+
+        def foc_savings(s):
+            return R - np.exp(-eta * (endowment - s)) - (s - s0) / t
+
+        if foc_savings(0.0) <= 0.0:
+            savings = 0.0
+        elif foc_savings(endowment) >= 0.0:
+            savings = endowment
+        else:
+            savings = spopt.root_scalar(
+                foc_savings, x0=endowment / 2.0, bracket=[0, endowment]
+            ).root
+
+        return np.array([savings, hours])
 
 
 def add_results(results: ScreeningResults):
