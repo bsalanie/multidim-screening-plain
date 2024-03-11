@@ -4,9 +4,8 @@ with bidimensional types"""
 import numpy as np
 import pandas as pd
 
-type_grid = "20x20"
-dim1, dim2 = type_grid.split("x")
-dim1, dim2 = int(dim1), int(dim2)
+dim1 = dim2 = 20
+type_grid = f"{dim1}x{dim2}"
 
 models = ["d2_m1_deduc", "d2_m1_copay", "d2_m2"]
 FB_surplus = np.zeros((dim1, dim2, 3))
