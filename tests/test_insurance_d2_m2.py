@@ -6,7 +6,7 @@ from multidim_screening_plain.insurance_d2_m2_values import val_BC, val_D, val_I
 
 
 def test_dvalBC(build_model):
-    model = build_model
+    model = build_model("insurance_d2_m2")
     y = np.array([1.6, 0.6])
     theta = np.array([0.5, -6.0])
 
@@ -40,7 +40,7 @@ def test_dvalD():
 
 
 def test_dvalI(build_model):
-    model = build_model
+    model = build_model("insurance_d2_m2")
     y = np.array([0.3, 0.2])
     theta = np.array([0.5, -6.0])
 
@@ -72,7 +72,7 @@ def test_dvalI(build_model):
 
 
 def test_db(build_model):
-    model = build_model
+    model = build_model("insurance_d2_m2")
     y = np.array([1.3, 0.2])
     theta = np.array([0.5, -6.0])
 
@@ -89,7 +89,7 @@ def test_db(build_model):
 
 
 def test_dS(build_model):
-    model = build_model
+    model = build_model("insurance_d2_m2")
     y = np.array([1.3, 0.2])
     theta = np.array([0.5, -6.0])
 

@@ -8,6 +8,7 @@ import numpy as np
 
 from multidim_screening_plain.classes import ScreeningModel
 from multidim_screening_plain.utils import (
+    H_fun,
     bs_norm_cdf,
     bs_norm_pdf,
     check_args,
@@ -22,20 +23,6 @@ coeff_qpenalty_S1_1 = 1_000.0  # coefficient of the quadratic penalty on S for y
 coeff_qpenalty_S01_0 = (
     1_000.0  # coefficient of the quadratic penalty on S for y0 + y1 small
 )
-
-
-def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
-    """computes the function `H(x)=x*Phi(x)+phi(x)`
-
-    Args:
-        argu:  must be an array or a float
-
-    Returns:
-        an object of the same type and shape
-    """
-    # return argu * n01_cdf_mat(argu) + n01_pdf_mat(argu)
-    # return argu * norm.cdf(argu) + norm.pdf(argu)
-    return argu * bs_norm_cdf(argu) + bs_norm_pdf(argu)
 
 
 def val_A(deltas: np.ndarray | float, s: float) -> np.ndarray | float:

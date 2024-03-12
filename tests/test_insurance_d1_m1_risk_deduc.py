@@ -10,7 +10,7 @@ from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
 
 
 def test_dvalBC(build_model):
-    model = build_model
+    model = build_model("insurance_d1_m1_risk_deduc")
     y = np.array([1.6])
     theta = np.array([-6.0])
 
@@ -44,7 +44,7 @@ def test_dvalD():
 
 
 def test_dvalI(build_model):
-    model = build_model
+    model = build_model("insurance_d1_m1_risk_deduc")
     y = np.array([1.3])
     theta = np.array([-6.0])
 
@@ -76,7 +76,7 @@ def test_dvalI(build_model):
 
 
 def test_db(build_model):
-    model = build_model
+    model = build_model("insurance_d1_m1_risk_deduc")
     y = np.array([1.2])
     theta = np.array([-6.0])
 
@@ -108,7 +108,7 @@ def test_db(build_model):
 
 
 def test_dS(build_model):
-    model = build_model
+    model = build_model("insurance_d1_m1_risk_deduc")
     y = np.array([1.3])
     theta = np.array([-6.0])
 

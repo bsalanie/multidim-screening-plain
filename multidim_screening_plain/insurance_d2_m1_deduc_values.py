@@ -5,49 +5,18 @@ with two-dimensional types (risk-aversion, risk) and straight deductible contrac
 from typing import Any, cast
 
 import numpy as np
-from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel
 from multidim_screening_plain.utils import (
+    H_fun,
     bs_norm_cdf,
     bs_norm_pdf,
+    check_args,
 )
 
 # penalties to keep minimization of `S` within bounds
 coeff_qpenalty_S0 = 0.00001  # coefficient of the quadratic penalty on S for y0 large
 coeff_qpenalty_S0_0 = 1_000.0  # coefficient of the quadratic penalty on S for y0<0
-
-
-def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
-    """computes the function `H(x)=x*Phi(x)+phi(x)`
-
-    Args:
-        argu:  must be an array or a float
-
-    Returns:
-        an object of the same type and shape
-    """
-    return argu * bs_norm_cdf(argu) + bs_norm_pdf(argu)
-
-
-def check_args(function_name: str, y: np.ndarray, theta: np.ndarray | None) -> None:
-    """check the arguments passed"""
-    if theta is not None:
-        if theta.shape != (2,):
-            bs_error_abort(
-                f"{function_name}: If theta is given it should be a 2-vector, not shape"
-                f" {theta.shape}"
-            )
-        if y.shape != (1,):
-            bs_error_abort(
-                f"{function_name}: If theta is given, y should be a 1-vector, not shape"
-                f" {y.shape}"
-            )
-    else:
-        if y.ndim != 1:
-            bs_error_abort(
-                f"{function_name}: y should be a vector, not {y.ndim}-dimensional"
-            )
 
 
 def val_A(deltas: np.ndarray | float, s: float) -> np.ndarray | float:
@@ -86,9 +55,8 @@ def val_BC(
             for all types and the contracts in `y` as an $(N, k)$ matrix
         If `gr` is `True`, we also return the derivatives wrt `y`.
     """
-    check_args("val_BC", y, theta)
+    check_args("val_BC", y, 2, 1, theta)
     if theta is not None:
-        # print(f"{y=}, {theta=}")
         y_0 = y[0]
         sigma, delta = theta[0], theta[1]
         s = cast(np.ndarray, model.params)[0]
@@ -113,23 +81,19 @@ def val_BC(
             grad[0] = pdf2 * val_expB / s + (cdf_d1 * sigma - pdf_d1 / s) * val_expC
             return val_compB + val_compC, grad
     else:
-        # precalculated_values = model.precalculated_values
         y_0 = y
         theta_mat = model.theta_mat
         sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
         s = cast(np.ndarray, model.params)[0]
-        # argu1 = precalculated_values["argu1"]
         argu1 = deltas / s + s * sigmas
         dy0s = np.subtract.outer(deltas, y_0) / s
         argu2 = dy0s + s * sigmas.reshape((-1, 1))
         cdf1a = cast(np.ndarray, bs_norm_cdf(argu1))
-        # cdf1a = precalculated_values["cdf1"]
         cdf2 = bs_norm_cdf(argu2)
         y01sig = np.outer(sigmas, y_0)
         d1 = dy0s
         cdf_d1 = bs_norm_cdf(d1)
         val_expBa = np.exp(sigmas * (s * s * sigmas / 2.0 + deltas))
-        # val_expBa = precalculated_values["val_expB"]
         val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * val_expBa.reshape((-1, 1))
         val_expC = np.exp(y01sig)
         val_compC = cdf_d1 * val_expC
@@ -191,8 +155,7 @@ def val_I(
         otherwise, the values of `I(y,t,s)` for all types and for all contracts in `y` as an $(N, k)$ matrix
         if `gr` is `True` we also return the gradient.
     """
-    check_args("val_I", y, theta)
-    # precalculated_values = model.precalculated_values
+    check_args("val_I", y, 2, 1, theta)
     if theta is not None:
         delta = theta[1]
         s = cast(np.ndarray, model.params)[0]
@@ -204,7 +167,6 @@ def val_I(
             val, grad = value_BC
             return val + value_A, grad
     else:
-        # value_A2 = cast(np.ndarray, precalculated_values["values_A"])
         deltas = model.theta_mat[:, 1]
         s = cast(np.ndarray, model.params)[0]
         value_A2 = cast(np.ndarray, val_A(deltas, s))
@@ -252,12 +214,3 @@ def cost_non_insur(model):
     sigmas = model.theta_mat[:, 0]
     y_no_insur = np.array([10.0])
     return np.log(val_I(model, y_no_insur))[:, 0] / sigmas
-
-
-# def value_deductible(deduc, sigma, delta, s):
-#     y = np.array([deduc, 0.0])
-#     sigma_vec, delta_vec = np.array([sigma]), np.array([delta])
-#     return (
-#         cost_non_insur(sigma, delta, s)
-#         - np.log(val_I(y, sigma_vec, delta_vec, s))[0, 0] / sigma
-#     )

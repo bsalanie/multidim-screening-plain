@@ -11,7 +11,6 @@ from multidim_screening_plain.insurance_d1_m1_risk_deduc_plots import (
 )
 from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
     S_penalties,
-    check_args,
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
@@ -19,7 +18,7 @@ from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
     val_I,
 )
 from multidim_screening_plain.plot_utils import setup_for_plots
-from multidim_screening_plain.utils import contracts_vector
+from multidim_screening_plain.utils import check_args, contracts_vector
 
 
 def b_fun(
@@ -43,7 +42,7 @@ def b_fun(
             all `k` contracts `y_j` in `y`
         and if `gr` is `True` we provide the gradient wrt `y`
     """
-    check_args("b_fun", y, theta)
+    check_args("b_fun", y, 1, 1, theta)
     sigma = cast(np.ndarray, model.params)[0]
     y_no_insur = np.array([20.0])
     if theta is not None:
@@ -108,7 +107,7 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
         the value of `S(y,theta)` for this contract and this type,
             and its gradient wrt `y` if `gr` is `True`
     """
-    check_args("S_fun", y, theta)
+    check_args("S_fun", y, 1, 1, theta)
     delta = theta[0]
     params = cast(np.ndarray, model.params)
     s, loading = params[1], params[2]

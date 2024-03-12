@@ -215,6 +215,18 @@ def bs_norm_pdf(x: np.ndarray | float) -> np.ndarray | float:
     return cast(np.ndarray, res) if is_array else cast(float, res)
 
 
+def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
+    """computes the function `H(x)=x*Phi(x)+phi(x)`
+
+    Args:
+        argu:  must be an array or a float
+
+    Returns:
+        an object of the same type and shape
+    """
+    return argu * bs_norm_cdf(argu) + bs_norm_pdf(argu)
+
+
 def contracts_vector(y_mat: np.ndarray) -> np.ndarray:
     """converts a matrix of contracts to a vector
 
