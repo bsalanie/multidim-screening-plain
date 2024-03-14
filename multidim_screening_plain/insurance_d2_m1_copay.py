@@ -287,6 +287,6 @@ def add_results(
     ]
 
 
-def additional_plots(model: ScreeningModel) -> None:
+def add_plots(model: ScreeningModel) -> None:
     df_all_results, model_plotdir = setup_for_plots(model)
     plot_calibration(df_all_results, path=model_plotdir + "/calibration")

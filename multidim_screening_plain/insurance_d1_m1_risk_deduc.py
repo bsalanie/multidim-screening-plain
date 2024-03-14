@@ -312,7 +312,7 @@ def add_results(
     ]
 
 
-def additional_plots(model: ScreeningModel) -> None:
+def add_plots(model: ScreeningModel) -> None:
     df_all_results, model_plotdir = setup_for_plots(model)
 
     # plot the first best

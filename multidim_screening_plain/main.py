@@ -96,7 +96,7 @@ def main(config_file):
 
         # you may not want any additional plots;
         #   then just return `pass` from `module.add_itional_plots`
-        module.additional_plots(model)
+        module.add_plots(model)
 
 
 if __name__ == "__main__":
