@@ -6,16 +6,16 @@ from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.insurance_d2_m2_mix_values import (
+from multidim_screening_plain.insurance_d2_m2_plots import (
+    plot_calibration,
+)
+from multidim_screening_plain.insurance_d2_m2_values_mix import (
     S_penalties,
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
     val_D,
     val_I,
-)
-from multidim_screening_plain.insurance_d2_m2_plots import (
-    plot_calibration,
 )
 from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import (

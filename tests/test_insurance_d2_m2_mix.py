@@ -2,13 +2,13 @@ import numpy as np
 from bs_python_utils.bs_opt import check_gradient_scalar_function
 
 from multidim_screening_plain.insurance_d2_m2_mix import S_fun, b_fun
-from multidim_screening_plain.insurance_d2_m2_mix_values import val_BC, val_D, val_I
+from multidim_screening_plain.insurance_d2_m2_values_mix import val_BC, val_D, val_I
 
 
 def test_dvalBC(build_model):
     model = build_model("insurance_d2_m2_mix")
     y = np.array([1.6, 0.6])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def BCdBC(z, args, gr):
         if gr:
@@ -24,9 +24,9 @@ def test_dvalBC(build_model):
 
 def test_dvalD():
     y = np.array([0.3, 0.2])
-    delta = -6.0
+    delta = 6.0
     s = 2.0
-    k = 0.015
+    k = 0.012
 
     def DdD(z, args, gr):
         if gr:
@@ -43,7 +43,7 @@ def test_dvalD():
 def test_dvalI(build_model):
     model = build_model("insurance_d2_m2_mix")
     y = np.array([0.3, 0.2])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def IdI(z, args, gr):
         if gr:
@@ -75,7 +75,7 @@ def test_dvalI(build_model):
 def test_db(build_model):
     model = build_model("insurance_d2_m2_mix")
     y = np.array([1.3, 0.2])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def bdb(z, args, gr):
         if gr:
@@ -92,7 +92,7 @@ def test_db(build_model):
 def test_dS(build_model):
     model = build_model("insurance_d2_m2_mix")
     y = np.array([1.3, 0.2])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def SdS(z, args, gr):
         if gr:
