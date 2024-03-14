@@ -234,7 +234,7 @@ def adjust_excluded(results: ScreeningResults) -> None:
     """
     deduc = results.SB_y[:, 0]
     EPS = 0.001
-    MAX_DEDUC = 5.0
+    MAX_DEDUC = 10.0
     excluded_types = np.where(deduc > MAX_DEDUC - EPS, True, False).tolist()
     results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
     n_excluded = np.sum(excluded_types)

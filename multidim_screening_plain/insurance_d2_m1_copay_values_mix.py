@@ -15,8 +15,8 @@ from multidim_screening_plain.utils import (
 )
 
 # penalties to keep minimization of `S` within bounds
-coeff_qpenalty_S1_0 = 1_000.0  # coefficient of the quadratic penalty on S for y1<0
-coeff_qpenalty_S1_1 = 1_000.0  # coefficient of the quadratic penalty on S for y1>1
+coeff_qpenalty_S1_0 = 0.0  # coefficient of the quadratic penalty on S for y1<0
+coeff_qpenalty_S1_1 = 0.0  # coefficient of the quadratic penalty on S for y1>1
 
 
 def val_A(deltas: np.ndarray | float, s: float, k: float) -> np.ndarray | float:

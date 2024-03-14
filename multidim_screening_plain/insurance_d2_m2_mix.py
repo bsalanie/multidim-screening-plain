@@ -300,7 +300,7 @@ def add_results(
     ]
 
 
-def additional_plots(model: ScreeningModel) -> None:
+def add_plots(model: ScreeningModel) -> None:
     """Adds more plots if needed; otherwise just `pass`
 
     Args:
