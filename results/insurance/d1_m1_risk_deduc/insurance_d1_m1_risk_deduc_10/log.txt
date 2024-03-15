@@ -28,3 +28,13 @@ ara = 0.35, s = 4.0, loading = 0.25
 convergence = True, iterations = 9648, elapsed time = 0:00:24.862223
 primal residual = 1.00e+00 tol,  dual residual = 3.01e-01 tol
 
+N = 10, tau = 5.14e+00, sig = 5.14e+00, step ratio = 1.0, primal tol = 3.16e-05, dual tol = 1.00e-04
+ara = 0.6, s = 2.0, loading = 0.25, k = 0.012
+convergence = True, iterations = 1733, elapsed time = 0:00:03.455317
+primal residual = 3.57e-01 tol,  dual residual = 9.99e-01 tol
+
+N = 10, tau = 5.14e+00, sig = 5.14e+00, step ratio = 1.0, primal tol = 3.16e-05, dual tol = 1.00e-04
+ara = 0.6, s = 2.0, loading = 0.25, k = 0.012
+convergence = True, iterations = 1733, elapsed time = 0:00:03.490304
+primal residual = 3.57e-01 tol,  dual residual = 9.99e-01 tol
+

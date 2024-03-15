@@ -34,19 +34,21 @@ from multidim_screening_plain.utils import (
 )
 
 
-def setup_model(model_config: dict) -> ScreeningModel:
+def setup_model(
+    model_config: dict, model_type: str, model_instance: str
+) -> ScreeningModel:
     """initializes the `ScreeningModel` object:
     fills in the dimensions, the numbers in each type, the characteristics of the types,
     the model parameters, and the directories.
 
     Args:
         model_config: the dictionary read from 'config.env'
+        model_type: the first command line argument, e.g. "insurance"
+        model_instance: the second command line argument, e.g. "d2_m2"
 
     Returns:
         the `ScreeningModel` object
     """
-    model_type = cast(str, model_config["MODEL_TYPE"])
-    model_instance = cast(str, model_config["MODEL_INSTANCE"])
     model_name = f"{model_type}_{model_instance}"
     print_stars(f"Running model {model_name}")
 
@@ -124,7 +126,8 @@ def setup_model(model_config: dict) -> ScreeningModel:
         params_names = None
 
     model_module = importlib.import_module(
-        f".{model_name}", package="multidim_screening_plain"
+        f".{model_type}.{model_instance}.{model_name}",
+        package="multidim_screening_plain",
     )
     return ScreeningModel(
         f=f,

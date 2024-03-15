@@ -23,14 +23,17 @@ from multidim_screening_plain.solver import (
 
 
 @click.command()
-@click.argument("config_file")
-def main(config_file):
+@click.argument("model_type")
+@click.argument("model_instance")
+def main(model_type, model_instance):
     # load configuration
+    config_dir = f"{model_type}/{model_instance}/"
+    config_file = f"config_{model_type}_{model_instance}.env"
     config = dotenv_values(
-        Path.cwd() / "multidim_screening_plain" / f"config_{config_file}.env"
+        Path.cwd() / "multidim_screening_plain" / f"{config_dir}/{config_file}"
     )
 
-    model = setup_model(config)
+    model = setup_model(config, model_type, model_instance)
     module = model.model_module
 
     print(model)
