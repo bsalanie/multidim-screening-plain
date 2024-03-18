@@ -25,6 +25,7 @@ class ScreeningModel:
         theta_mat: an `(N,d)` matrix with the types
         type_names: a list of `d` strings with the names of the types
         contract_varnames: a list of `m` strings with the names of the contract variables
+        y_minmax: an `(m,2)` array wth their minimum and maximum possible values
         params: a `p`-vector with the parameters of the model
         params_names: a list of `p` strings with the names of the parameters
         m: the dimension of the contracts
@@ -49,7 +50,8 @@ class ScreeningModel:
     theta_mat: np.ndarray
     type_names: list[str]
     contract_varnames: list[str]
-    m: int  # the dimension of the contracts
+    m: int
+    y_minmax: np.ndarray
     model_id: str
     resdir: Path
     plotdir: Path

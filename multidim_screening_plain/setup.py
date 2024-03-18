@@ -96,6 +96,15 @@ def setup_model(
         "contract variable names",
         "str",
     )
+    str_contract_mins = cast(str, model_config["CONTRACT_MINIMA"])
+    contract_mins = parse_string(
+        str_contract_mins, m, ",", "minima of contract variables", "float"
+    )
+    str_contract_maxs = cast(str, model_config["CONTRACT_MAXIMA"])
+    contract_maxs = parse_string(
+        str_contract_maxs, m, ",", "maxima of contract variables", "float"
+    )
+    y_minmax = np.column_stack((contract_mins, contract_maxs))
 
     suffix = ""
     model_id = f"{model_name}_{str_dims_grid}{suffix}"
@@ -135,6 +144,7 @@ def setup_model(
         theta_mat=theta_mat,
         type_names=type_names.tolist(),
         contract_varnames=contract_varnames.tolist(),
+        y_minmax=y_minmax,
         params=params,
         params_names=params_names,
         m=m,

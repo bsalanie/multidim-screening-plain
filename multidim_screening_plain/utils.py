@@ -62,9 +62,9 @@ def split_y(y: np.ndarray, m: int) -> list[np.ndarray]:
 
 def check_args(
     function_name: str,
+    y: np.ndarray,
     d: int,
     m: int,
-    y: np.ndarray | None,
     theta: np.ndarray | None,
 ) -> None:
     """check the arguments passed"""
@@ -74,17 +74,17 @@ def check_args(
                 f"{function_name}: If theta is given it should be a {d}-vector, not shape"
                 f" {theta.shape}"
             )
-        if y is not None and y.shape != (m,):
+        if y.shape != (m,):
             bs_error_abort(
                 f"{function_name}: If theta is given, y should be a {m}-vector, not shape"
                 f" {y.shape}"
             )
     else:
-        if y is not None and y.ndim != 1:
+        if y.ndim != 1:
             bs_error_abort(
                 f"{function_name}: y should be a vector, not {y.ndim}-dimensional"
             )
-        if y is not None and y.size % m != 0:
+        if y.size % m != 0:
             bs_error_abort(
                 f"{function_name}: y should have a number of elements multiple of {m}, not"
                 f" {y.size}"
