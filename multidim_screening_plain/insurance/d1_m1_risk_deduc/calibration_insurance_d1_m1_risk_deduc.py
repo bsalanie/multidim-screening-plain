@@ -6,22 +6,26 @@ from dotenv import dotenv_values
 from rich.console import Console
 from rich.table import Table
 
-from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
+from multidim_screening_plain.insurance.d1_m1_risk_deduc.insurance_d1_m1_risk_deduc_values import (
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
 )
 from multidim_screening_plain.setup import setup_model
 
+model_type, model_instance = "insurance", "d1_m1_risk_deduc"
+config_dir = f"{model_type}/{model_instance}/"
+config_file = f"config_{model_type}_{model_instance}.env"
 config = dotenv_values(
-    Path.cwd() / "multidim_screening_plain" / "config_insurance_d1_m1_risk_deduc.env"
+    Path.cwd() / "multidim_screening_plain" / f"{config_dir}/{config_file}"
 )
-model = setup_model(config)
+model = setup_model(config, model_type, model_instance)
+
 
 cost_zero = cost_non_insur(model)
 deltas = model.theta_mat[:, 0]
-s = cast(np.ndarray, model.params)[1]
-accident_proba = proba_claim(deltas, s)
+s, k = cast(np.ndarray, model.params)[1, 3]
+accident_proba = proba_claim(deltas, s, k)
 loss_pos = expected_positive_loss(deltas, s)
 
 console = Console()

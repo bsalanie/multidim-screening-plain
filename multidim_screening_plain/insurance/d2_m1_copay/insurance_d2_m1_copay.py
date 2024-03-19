@@ -6,11 +6,10 @@ from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.insurance_d2_m1_copay_plots import (
+from multidim_screening_plain.insurance.d2_m1_copay.insurance_d2_m1_copay_plots import (
     plot_calibration,
 )
-from multidim_screening_plain.insurance_d2_m1_copay_values_mix import (
-    S_penalties,
+from multidim_screening_plain.insurance.d2_m1_copay.insurance_d2_m1_copay_values import (
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
@@ -93,19 +92,17 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
     delta = theta[1]
     params = cast(np.ndarray, model.params)
     s, loading, k = params
-    b_vals, D_vals, penalties = (
+    b_vals, D_vals = (
         b_fun(model, y, theta=theta, gr=gr),
         val_D(y, delta, s, k, gr=gr),
-        S_penalties(y, gr=gr),
     )
     if not gr:
-        return b_vals - (1.0 + loading) * D_vals - penalties
+        return b_vals - (1.0 + loading) * D_vals
     else:
         b_values, b_gradient = b_vals
         D_values, D_gradient = D_vals
-        val_penalties, grad_penalties = penalties
-        val_S = b_values - (1.0 + loading) * D_values - val_penalties
-        grad_S = b_gradient - (1.0 + loading) * D_gradient - grad_penalties
+        val_S = b_values - (1.0 + loading) * D_values
+        grad_S = b_gradient - (1.0 + loading) * D_gradient
         return val_S, grad_S
 
 

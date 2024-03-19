@@ -14,15 +14,18 @@ from rich.console import Console
 from rich.table import Table
 
 from multidim_screening_plain.classes import ScreeningModel
-from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import val_I
+from multidim_screening_plain.insurance.d1_m1_risk_deduc.insurance_d1_m1_risk_deduc_values import (
+    val_I,
+)
 from multidim_screening_plain.setup import setup_model
 
 # load configuration
+config_dir = "insurance/d1_m1_risk_deduc/"
+config_file = "config_insurance_d1_m1_risk_deduc.env"
 config = dotenv_values(
-    Path.cwd() / "multidim_screening_plain" / "config_insurance_d1_m1_risk_deduc.env"
+    Path.cwd() / "multidim_screening_plain" / f"{config_dir}/{config_file}"
 )
-model = setup_model(config)
-module = model.model_module
+model = setup_model(config, "insurance", "d1_m1_risk_deduc")
 
 S_fun = model.S_function
 N = model.N

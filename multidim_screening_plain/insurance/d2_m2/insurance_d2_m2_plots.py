@@ -1,4 +1,4 @@
-"""adds one plot for insurance_d2_m2 and insurance_d2_m2_mix: the calibration values"""
+"""adds one plot for insurance_d2_m2: the calibration values"""
 
 from typing import cast
 

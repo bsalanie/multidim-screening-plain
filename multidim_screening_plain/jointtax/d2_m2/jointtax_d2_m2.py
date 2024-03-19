@@ -6,7 +6,9 @@ import scipy.optimize as spopt
 from bs_python_utils.bsutils import bs_error_abort
 
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
-from multidim_screening_plain.jointtax_d2_m2_plots import plot_marginal_tax_rate
+from multidim_screening_plain.jointtax.d2_m2.jointtax_d2_m2_plots import (
+    plot_marginal_tax_rate,
+)
 from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import (
     check_args,

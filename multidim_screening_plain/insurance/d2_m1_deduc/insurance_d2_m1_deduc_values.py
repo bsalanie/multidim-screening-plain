@@ -14,10 +14,6 @@ from multidim_screening_plain.utils import (
     check_args,
 )
 
-# penalties to keep minimization of `S` within bounds
-coeff_qpenalty_S0 = 0.00001  # coefficient of the quadratic penalty on S for y0 large
-coeff_qpenalty_S0_0 = 1_000.0  # coefficient of the quadratic penalty on S for y0<0
-
 
 def val_A(deltas: np.ndarray | float, s: float, k: float) -> np.ndarray | float:
     """evaluates `A(delta,s)`, the probability that the loss is less than the deductible
@@ -184,30 +180,6 @@ def val_I(
         else:
             val, grad = value_BC
             return val + value_A2.reshape((-1, 1)), grad
-
-
-def S_penalties(y: np.ndarray, gr: bool = False) -> Any:
-    """penalties to keep minimization of `S` within bounds; with gradient if `gr` is `True`
-
-    Args:
-        y:  a 1-vector of 1 contract
-        gr: whether we compute the gradient
-
-    Returns:
-        a scalar, the total value of the penalties;
-        and a 1-vector of derivatives if `gr` is `True`
-    """
-    y_0 = y[0]
-    y_0_neg = min(y_0, 0.0)
-    val_penalties = (
-        coeff_qpenalty_S0 * y_0 * y_0 + coeff_qpenalty_S0_0 * y_0_neg * y_0_neg
-    )
-    if not gr:
-        return val_penalties
-    else:
-        grad = np.zeros(1)
-        grad[0] = 2.0 * coeff_qpenalty_S0 * y_0 + 2.0 * coeff_qpenalty_S0_0 * y_0_neg
-        return val_penalties, grad
 
 
 def proba_claim(deltas, s, k):

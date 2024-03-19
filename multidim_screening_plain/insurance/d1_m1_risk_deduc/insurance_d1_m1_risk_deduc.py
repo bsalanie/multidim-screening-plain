@@ -15,6 +15,7 @@ from multidim_screening_plain.insurance.d1_m1_risk_deduc.insurance_d1_m1_risk_de
     proba_claim,
     val_D,
     val_I,
+    val_I_no_insurance,
 )
 from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import check_args, contracts_vector
@@ -41,7 +42,7 @@ def b_fun(
             all `k` contracts `y_j` in `y`
         and if `gr` is `True` we provide the gradient wrt `y`
     """
-    check_args("b_fun", 1, 1, y, theta)
+    check_args("b_fun", y, 1, 1, theta)
     if theta is not None:
         return b_fun_1(model, y, theta, gr=gr)
     else:
@@ -57,8 +58,8 @@ def b_fun_1(
     """`b_fun` for contract `y` for type `theta"""
     params = cast(np.ndarray, model.params)
     sigma = params[0]
-    value_non_insured = val_I(model, theta=theta)
-    value_insured = val_I(model, y=y, theta=theta, gr=gr)
+    value_non_insured = val_I_no_insurance(model, theta=theta)
+    value_insured = val_I(model, y, theta=theta, gr=gr)
     if not gr:
         diff_logs = np.log(value_non_insured) - np.log(value_insured)
         return diff_logs / sigma
@@ -77,8 +78,8 @@ def b_fun_all(
     """`b_fun` for all contracts in `y` and for all types"""
     params = cast(np.ndarray, model.params)
     sigma = params[0]
-    value_non_insured = val_I(model)
-    value_insured = val_I(model, y=y, gr=gr)
+    value_non_insured = val_I_no_insurance(model)
+    value_insured = val_I(model, y, gr=gr)
     if not gr:
         diff_logs = np.log(value_non_insured) - np.log(value_insured)
         return diff_logs / sigma
@@ -104,7 +105,7 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
         the value of `S(y,theta)` for this contract and this type,
             and its gradient wrt `y` if `gr` is `True`
     """
-    check_args("S_fun", 1, 1, y, theta)
+    check_args("S_fun", y, 1, 1, theta)
     delta = theta[0]
     params = cast(np.ndarray, model.params)
     _, s, loading, k = params
@@ -139,6 +140,7 @@ def create_initial_contracts(
             the contracts are to be determined.
     """
     N = model.N
+    MIN_Y0, MAX_Y0 = model.y_minmax[0, :]
     if start_from_first_best:
         if y_first_best_mat is None:
             bs_error_abort("We start from the first best but y_first_best_mat is None")
@@ -146,12 +148,11 @@ def create_initial_contracts(
         set_fixed_y: set[int] = set()
         set_not_insured: set[int] = set()
         free_y = list(range(N))
-    else:  # not insured if deductible >= MAX_DEDUC
-        MAX_DEDUC = 10.0
+    else:  # not insured if deductible >= MAX_Y0
         model_resdir = cast(Path, model.resdir)
         y_init = np.loadtxt(model_resdir / "current_y.txt")
         EPS = 0.001
-        set_not_insured = {i for i in range(N) if y_init[i] > MAX_DEDUC - EPS}
+        set_not_insured = {i for i in range(N) if y_init[i] > MAX_Y0 - EPS}
         set_fixed_y = set_not_insured
         print(f"{set_fixed_y=}")
 
@@ -159,12 +160,11 @@ def create_initial_contracts(
         fixed_y = list(set_fixed_y)
         free_y = list(set_free_y)
 
-        MIN_Y0, MAX_Y0 = 0.0, MAX_DEDUC
         y_init = cast(np.ndarray, y_init)
         perturbation = 0.001
         rng = np.random.default_rng(645)
         y_init = np.clip(y_init + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
-        y_init[fixed_y] = MAX_DEDUC
+        y_init[fixed_y] = MAX_Y0
 
         y_init = cast(np.ndarray, y_init)
 
@@ -218,16 +218,17 @@ def proximal_operator(
         return cast(tuple[float, np.ndarray], prox_obj_and_grad(y, args, gr=True))[1]
 
     y_init = np.array([1.7]) if t is None else z
+    y_min, y_max = model.y_minmax[0, :]
 
-    #     check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
-    #     bs_error_abort("done")
+    # check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
+    # bs_error_abort("done")
 
     mini = minimize_free(
         prox_obj,
         prox_grad,
         x_init=y_init,
         args=[],
-        bounds=[(0.0, 10.0)],
+        bounds=[(y_min, y_max)],
     )
 
     if mini.success or mini.status == 2:
@@ -247,7 +248,7 @@ def adjust_excluded(results: ScreeningResults) -> None:
     """
     deduc = results.SB_y[:, 0]
     EPS = 0.001
-    MAX_DEDUC = 10.0
+    MAX_DEDUC = results.model.y_minmax[0, 1]
     excluded_types = np.where(deduc > MAX_DEDUC - EPS, True, False).tolist()
     results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
     n_excluded = np.sum(excluded_types)
