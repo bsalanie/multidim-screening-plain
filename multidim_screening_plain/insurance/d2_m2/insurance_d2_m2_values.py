@@ -9,34 +9,12 @@ import numpy as np
 
 from multidim_screening_plain.classes import ScreeningModel
 from multidim_screening_plain.utils import (
+    H_fun,
     bs_norm_cdf,
     bs_norm_pdf,
     check_args,
     split_y,
 )
-
-# penalties to keep minimization of `S` within bounds
-coeff_qpenalty_S0 = 0.00001  # coefficient of the quadratic penalty on S for y0 large
-coeff_qpenalty_S0_0 = 1_000.0  # coefficient of the quadratic penalty on S for y0<0
-coeff_qpenalty_S1_0 = 1_000.0  # coefficient of the quadratic penalty on S for y1<0
-coeff_qpenalty_S1_1 = 1_000.0  # coefficient of the quadratic penalty on S for y1>1
-coeff_qpenalty_S01_0 = (
-    1_000.0  # coefficient of the quadratic penalty on S for y0 + y1 small
-)
-
-
-def H_fun(argu: np.ndarray | float) -> np.ndarray | float:
-    """computes the function `H(x)=x*Phi(x)+phi(x)`
-
-    Args:
-        argu:  must be an array or a float
-
-    Returns:
-        an object of the same type and shape
-    """
-    # return argu * n01_cdf_mat(argu) + n01_pdf_mat(argu)
-    # return argu * norm.cdf(argu) + norm.pdf(argu)
-    return argu * bs_norm_cdf(argu) + bs_norm_pdf(argu)
 
 
 def val_A(deltas: np.ndarray | float, s: float, k: float) -> np.ndarray | float:
@@ -77,73 +55,81 @@ def val_BC(
         If `gr` is `True`, we also return the derivatives wrt `y`.
     """
     check_args("val_BC", y, 2, 2, theta)
+
+    if theta is not None:
+        return val_BC_1(model, y, theta, gr=gr)
+    else:
+        return val_BC_all(model, y, gr=gr)
+
+
+def val_BC_1(
+    model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = False
+) -> Any:
     params = cast(np.ndarray, model.params)
     s, _, k = params
-    if theta is not None:
-        # print(f"{y=}, {theta=}")
-        y_0, y_1 = y[0], y[1]
-        sigma, delta = theta[0], theta[1]
-        argu1 = delta / s + s * sigma
-        dy0s = (delta - y_0) / s
-        argu2 = dy0s + s * sigma
-        cdf1 = bs_norm_cdf(argu1)
-        cdf2 = bs_norm_cdf(argu2)
-        y1sig = sigma * y_1
-        y01sig = sigma * y_0 * (1 - y_1)
-        ny1sig = sigma * (1 - y_1)
-        p_0 = k * delta
-        val_expB = np.exp(sigma * (s * s * sigma / 2.0 + delta))
-        val_compB = p_0 * (cdf1 - cdf2) * val_expB
-        val_expC = np.exp(y1sig * (s * s * y1sig / 2.0 + delta) + y01sig)
-        d1 = dy0s + s * y1sig
-        cdf_d1 = bs_norm_cdf(d1)
-        val_compC = p_0 * cdf_d1 * val_expC
-        if not gr:
-            return val_compB + val_compC
-        else:
-            pdf2 = bs_norm_pdf(argu2)
-            pdf_d1 = bs_norm_pdf(d1)
-            grad = np.zeros(2)
-            grad[0] = p_0 * (
-                pdf2 * val_expB / s + (cdf_d1 * ny1sig - pdf_d1 / s) * val_expC
-            )
-            grad[1] = s * p_0 * H_fun(d1) * val_expC * sigma
-            return val_compB + val_compC, grad
+    y_0, y_1 = y[0], y[1]
+    sigma, delta = theta[0], theta[1]
+    argu1 = delta / s + s * sigma
+    dy0s = (delta - y_0) / s
+    argu2 = dy0s + s * sigma
+    cdf1 = bs_norm_cdf(argu1)
+    cdf2 = bs_norm_cdf(argu2)
+    y1sig = sigma * y_1
+    y01sig = sigma * y_0 * (1 - y_1)
+    ny1sig = sigma * (1 - y_1)
+    p_0 = k * delta
+    val_expB = np.exp(sigma * (s * s * sigma / 2.0 + delta))
+    val_compB = p_0 * (cdf1 - cdf2) * val_expB
+    val_expC = np.exp(y1sig * (s * s * y1sig / 2.0 + delta) + y01sig)
+    d1 = dy0s + s * y1sig
+    cdf_d1 = bs_norm_cdf(d1)
+    val_compC = p_0 * cdf_d1 * val_expC
+    if not gr:
+        return val_compB + val_compC
     else:
-        y_0, y_1 = split_y(y, 2)
-        theta_mat = model.theta_mat
-        sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
-        argu1 = deltas / s + s * sigmas
-        dy0s = np.subtract.outer(deltas, y_0) / s
-        argu2 = dy0s + s * sigmas.reshape((-1, 1))
-        cdf1a = cast(np.ndarray, bs_norm_cdf(argu1))
-        cdf2 = bs_norm_cdf(argu2)
-        y1sig = np.outer(sigmas, y_1)
-        y01sig = np.outer(sigmas, y_0 * (1 - y_1))
-        ny1sig = np.outer(sigmas, 1 - y_1)
-        d1 = dy0s + s * y1sig
-        cdf_d1 = bs_norm_cdf(d1)
-        p_0 = k * deltas
-        val_expBa = np.exp(sigmas * (s * s * sigmas / 2.0 + deltas))
-        val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * (p_0 * val_expBa).reshape(
-            (-1, 1)
+        pdf2 = bs_norm_pdf(argu2)
+        pdf_d1 = bs_norm_pdf(d1)
+        grad = np.zeros(2)
+        grad[0] = p_0 * (
+            pdf2 * val_expB / s + (cdf_d1 * ny1sig - pdf_d1 / s) * val_expC
         )
-        val_expC = np.exp(
-            y1sig * (s * s * y1sig / 2.0 + deltas.reshape((-1, 1))) + y01sig
-        )
-        val_compC = cdf_d1 * val_expC * p_0.reshape((-1, 1))
-        if not gr:
-            return val_compB + val_compC
-        else:
-            pdf2 = bs_norm_pdf(argu2)
-            pdf_d1 = bs_norm_pdf(d1)
-            grad = np.zeros((2, sigmas.size, y_0.size))
-            grad[0, :, :] = (
-                pdf2 * val_expBa.reshape((-1, 1)) / s
-                + (cdf_d1 * ny1sig - pdf_d1 / s) * val_expC
-            ) * p_0.reshape((-1, 1))
-            grad[1, :, :] = s * H_fun(d1) * val_expC * (p_0 * sigmas).reshape((-1, 1))
-            return val_compB + val_compC, grad
+        grad[1] = s * p_0 * H_fun(d1) * val_expC * sigma
+        return val_compB + val_compC, grad
+
+
+def val_BC_all(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
+    params = cast(np.ndarray, model.params)
+    s, _, k = params
+    y_0, y_1 = split_y(y, 2)
+    theta_mat = model.theta_mat
+    sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
+    argu1 = deltas / s + s * sigmas
+    dy0s = np.subtract.outer(deltas, y_0) / s
+    argu2 = dy0s + s * sigmas.reshape((-1, 1))
+    cdf1a = cast(np.ndarray, bs_norm_cdf(argu1))
+    cdf2 = bs_norm_cdf(argu2)
+    y1sig = np.outer(sigmas, y_1)
+    y01sig = np.outer(sigmas, y_0 * (1 - y_1))
+    ny1sig = np.outer(sigmas, 1 - y_1)
+    d1 = dy0s + s * y1sig
+    cdf_d1 = bs_norm_cdf(d1)
+    p_0 = k * deltas
+    val_expBa = np.exp(sigmas * (s * s * sigmas / 2.0 + deltas))
+    val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * (p_0 * val_expBa).reshape((-1, 1))
+    val_expC = np.exp(y1sig * (s * s * y1sig / 2.0 + deltas.reshape((-1, 1))) + y01sig)
+    val_compC = cdf_d1 * val_expC * p_0.reshape((-1, 1))
+    if not gr:
+        return val_compB + val_compC
+    else:
+        pdf2 = bs_norm_pdf(argu2)
+        pdf_d1 = bs_norm_pdf(d1)
+        grad = np.zeros((2, sigmas.size, y_0.size))
+        grad[0, :, :] = (
+            pdf2 * val_expBa.reshape((-1, 1)) / s
+            + (cdf_d1 * ny1sig - pdf_d1 / s) * val_expC
+        ) * p_0.reshape((-1, 1))
+        grad[1, :, :] = s * H_fun(d1) * val_expC * (p_0 * sigmas).reshape((-1, 1))
+        return val_compB + val_compC, grad
 
 
 def val_D(y: np.ndarray, delta: float, s: float, k: float, gr: bool = False) -> Any:
@@ -196,7 +182,7 @@ def val_I(
     """
     check_args("val_I", y, 2, 2, theta)
     params = cast(np.ndarray, model.params)
-    s, k = params[1:]
+    s, k = params[0], params[2]
     if theta is not None:
         delta = theta[1]
         value_A = cast(float, val_A(delta, s, k))
@@ -217,44 +203,29 @@ def val_I(
             return val + value_A2.reshape((-1, 1)), grad
 
 
-def S_penalties(y: np.ndarray, gr: bool = False) -> Any:
-    """penalties to keep minimization of `S` within bounds; with gradient if `gr` is `True`
-
-    Args:
-        y:  a 2-vector of 1 contract
-        gr: whether we compute the gradient
-
-    Returns:
-        a scalar, the total value of the penalties;
-        and a 2-vector of derivatives if `gr` is `True`
-    """
-    y_0, y_1 = y[0], y[1]
-    y_0_neg = min(y_0, 0.0)
-    y_1_neg = min(y_1, 0.0)
-    y_1_above1 = max(y_1 - 1.0, 0.0)
-    y_01_small = max(0.1 - y_0 - y_1, 0.0)
-    val_penalties = (
-        coeff_qpenalty_S0 * y_0 * y_0
-        + coeff_qpenalty_S0_0 * y_0_neg * y_0_neg
-        + coeff_qpenalty_S1_0 * y_1_neg * y_1_neg
-        + coeff_qpenalty_S1_1 * y_1_above1 * y_1_above1
-        + coeff_qpenalty_S01_0 * y_01_small * y_01_small
-    )
-    if not gr:
-        return val_penalties
+def val_I_no_insurance(model: ScreeningModel, theta: np.ndarray | None = None) -> Any:
+    params = cast(np.ndarray, model.params)
+    s, k = params[0], params[2]
+    if theta is not None:
+        sigma, delta = theta[0], theta[1]
+        argu1 = delta / s + s * sigma
+        cdf1 = bs_norm_cdf(argu1)
+        p_1 = k * delta
+        val_expB = np.exp(sigma * (s * s * sigma / 2.0 + delta))
+        val_compB = p_1 * cdf1 * val_expB
+        delta = theta[1]
+        value_A = cast(float, val_A(delta, s, k))
+        return val_compB + value_A
     else:
-        grad = np.zeros(2)
-        grad[0] = (
-            2.0 * coeff_qpenalty_S0 * y_0
-            + 2.0 * coeff_qpenalty_S0_0 * y_0_neg
-            - 2.0 * coeff_qpenalty_S01_0 * y_01_small
-        )
-        grad[1] = (
-            2.0 * coeff_qpenalty_S1_0 * y_1_neg
-            + 2.0 * coeff_qpenalty_S1_1 * y_1_above1
-            - 2.0 * coeff_qpenalty_S01_0 * y_01_small
-        )
-        return val_penalties, grad
+        theta_mat = model.theta_mat
+        sigmas, deltas = theta_mat[:, 0], theta_mat[:, 1]
+        value_A2 = cast(np.ndarray, val_A(deltas, s, k))
+        argu1 = deltas / s + s * sigmas
+        cdf1a = cast(np.ndarray, bs_norm_cdf(argu1))
+        p_1 = k * deltas
+        val_expBa = np.exp(sigmas * (s * s * sigmas / 2.0 + deltas))
+        val_compBa = cdf1a * p_1 * val_expBa
+        return val_compBa + value_A2
 
 
 def proba_claim(deltas, s, k):
@@ -267,5 +238,4 @@ def expected_positive_loss(deltas, s):
 
 def cost_non_insur(model):
     sigmas = model.theta_mat[:, 0]
-    y_no_insur = np.array([0.0, 1.0])
-    return np.log(val_I(model, y_no_insur))[:, 0] / sigmas
+    return np.log(val_I_no_insurance(model)) / sigmas

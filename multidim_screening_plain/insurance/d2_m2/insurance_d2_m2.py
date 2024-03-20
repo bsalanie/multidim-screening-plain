@@ -10,12 +10,12 @@ from multidim_screening_plain.insurance.d2_m2.insurance_d2_m2_plots import (
     plot_calibration,
 )
 from multidim_screening_plain.insurance.d2_m2.insurance_d2_m2_values import (
-    S_penalties,
     cost_non_insur,
     expected_positive_loss,
     proba_claim,
     val_D,
     val_I,
+    val_I_no_insurance,
 )
 from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import (
@@ -47,8 +47,7 @@ def b_fun(
     """
     check_args("b_fun", y, 2, 2, theta)
     if theta is not None:
-        y_no_insur = np.array([0.0, 1.0])
-        value_non_insured = val_I(model, y_no_insur, theta=theta)
+        value_non_insured = val_I_no_insurance(model, theta=theta)
         value_insured = val_I(model, y, theta=theta, gr=gr)
         sigma = theta[0]
         if not gr:
@@ -95,19 +94,17 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
     delta = theta[1]
     params = cast(np.ndarray, model.params)
     s, loading, k = params
-    b_vals, D_vals, penalties = (
+    b_vals, D_vals = (
         b_fun(model, y, theta=theta, gr=gr),
         val_D(y, delta, s, k, gr=gr),
-        S_penalties(y, gr=gr),
     )
     if not gr:
-        return b_vals - (1.0 + loading) * D_vals - penalties
+        return b_vals - (1.0 + loading) * D_vals
     else:
         b_values, b_gradient = b_vals
         D_values, D_gradient = D_vals
-        val_penalties, grad_penalties = penalties
-        val_S = b_values - (1.0 + loading) * D_values - val_penalties
-        grad_S = b_gradient - (1.0 + loading) * D_gradient - grad_penalties
+        val_S = b_values - (1.0 + loading) * D_values
+        grad_S = b_gradient - (1.0 + loading) * D_gradient
         return val_S, grad_S
 
 
@@ -148,8 +145,8 @@ def create_initial_contracts(
         not_insured = list(set_not_insured)
         rng = np.random.default_rng(645)
 
-        MIN_Y0, MAX_Y0 = 0.0, np.inf
-        MIN_Y1, MAX_Y1 = 0.0, 1.0
+        MIN_Y0, MAX_Y0 = model.y_minmax[0, :]
+        MIN_Y1, MAX_Y1 = model.y_minmax[1, :]
         y_init = cast(np.ndarray, y_init)
         perturbation = 0.001
         yinit_0 = np.clip(y_init[:, 0] + rng.normal(0, perturbation, N), MIN_Y0, MAX_Y0)
@@ -213,8 +210,14 @@ def proximal_operator(
     # check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
     # bs_error_abort("done")
 
+    y_mins, y_maxs = model.y_minmax[:, 0], model.y_minmax[:, 1]
+
     mini = minimize_free(
-        prox_obj, prox_grad, x_init=y_init, args=[], bounds=[(0.0, 15.0), (0.0, 1.0)]
+        prox_obj,
+        prox_grad,
+        x_init=y_init,
+        args=[],
+        bounds=[(y_mins[0], y_maxs[0]), (y_mins[1], y_maxs[1])],
     )
 
     if mini.success or mini.status == 2:
@@ -236,7 +239,7 @@ def adjust_excluded(results: ScreeningResults) -> None:
     EPS = 0.001
     excluded_types = np.where(copay > 1.0 - EPS, True, False).tolist()
     results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
-    MAX_DEDUC = 5.0
+    MAX_DEDUC = results.model.y_minmax[0, 1]
     n_excluded = np.sum(excluded_types)
     results.SB_y[excluded_types, 0] = np.full(n_excluded, MAX_DEDUC)
     results.SB_y[excluded_types, 1] = np.ones(n_excluded)

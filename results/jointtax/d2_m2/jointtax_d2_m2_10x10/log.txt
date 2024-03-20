@@ -63,3 +63,28 @@ w = 1.0, R = 1.0, eta = 1.0
 convergence = False, iterations = 200000, elapsed time = 0:05:30.290528
 primal residual = 1.83e+02 tol,  dual residual = 1.05e+02 tol
 
+N = 100, tau = 7.02e-03, sig = 7.02e-03, step ratio = 1.0, primal tol = 1.41e-05, dual tol = 1.00e-04
+w = 1.0, R = 1.0, eta = 1.0
+convergence = False, iterations = 10000, elapsed time = 0:00:15.863397
+primal residual = 4.35e+03 tol,  dual residual = 1.67e+03 tol
+
+N = 100, tau = 7.78e-03, sig = 7.78e-03, step ratio = 1.0, primal tol = 1.41e-05, dual tol = 1.00e-04
+w = 1.0, R = 1.0, eta = 1.0
+convergence = False, iterations = 100000, elapsed time = 0:02:28.094497
+primal residual = 5.13e+02 tol,  dual residual = 2.16e+02 tol
+
+N = 100, tau = 7.83e-03, sig = 7.83e-03, step ratio = 1.0, primal tol = 1.41e-05, dual tol = 1.00e-04
+w = 1.0, R = 1.0, eta = 1.0
+convergence = False, iterations = 500000, elapsed time = 0:13:01.777453
+primal residual = 5.81e+00 tol,  dual residual = 1.12e+01 tol
+
+N = 100, tau = 7.79e-03, sig = 7.79e-03, step ratio = 1.0, primal tol = 1.41e-04, dual tol = 1.00e-03
+w = 1.0, R = 1.0, eta = 1.0
+convergence = True, iterations = 49120, elapsed time = 0:01:16.961833
+primal residual = 9.99e-01 tol,  dual residual = 8.04e-01 tol
+
+N = 100, tau = 7.79e-03, sig = 7.79e-03, step ratio = 1.0, primal tol = 1.41e-04, dual tol = 1.00e-03
+w = 1.0, R = 1.0, eta = 1.0
+convergence = True, iterations = 49086, elapsed time = 0:01:12.961738
+primal residual = 1.00e+00 tol,  dual residual = 7.18e-01 tol
+

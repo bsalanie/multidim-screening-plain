@@ -191,6 +191,10 @@ def add_results(results: ScreeningResults):
     pass
 
 
+def adjust_excluded(results: ScreeningResults):
+    pass
+
+
 def add_plots(model: ScreeningModel) -> None:
     df_all_results, model_plotdir = setup_for_plots(model)
 

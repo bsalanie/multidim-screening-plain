@@ -143,3 +143,7 @@ N = 100, tau = 3.13e-02, sig = 3.13e-02, step ratio = 1.0, primal tol = 1.41e-05
 convergence = True, iterations = 4992, elapsed time = 0:00:04.413186
 primal residual = 9.82e-01 tol,  dual residual = 8.25e-01 tol
 
+N = 100, tau = 3.13e-02, sig = 3.13e-02, step ratio = 1.0, primal tol = 1.41e-04, dual tol = 1.00e-03
+convergence = True, iterations = 85675, elapsed time = 0:00:55.718419
+primal residual = 2.58e-01 tol,  dual residual = 1.00e+00 tol
+
