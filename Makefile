@@ -14,7 +14,7 @@ check: ## Run code quality tools.
 	@echo "🚀 Linting code: Running pre-commit"
 	@poetry run pre-commit run -a
 	@echo "🚀 Static type checking: Running mypy"
-	@poetry run mypy ${PROJECT_SLUG}/*.py
+	@poetry run mypy ${PROJECT_SLUG}/
 
 
 .PHONY: test
