@@ -24,7 +24,7 @@ def val_A(deltas: np.ndarray | float, s: float, k: float) -> np.ndarray | float:
     Args:
         deltas: a `q`-vector of risk parameters, or a single value
         s: the dispersion of losses
-        k: `p_0/delta`
+        k: `p_1/delta`
 
     Returns:
         the values of `A(delta,s)` as a `q`-vector, or a single value
@@ -77,23 +77,23 @@ def val_BC_1(
     y1sig = sigma * y_1
     y01sig = sigma * y_0 * (1 - y_1)
     ny1sig = sigma * (1 - y_1)
-    p_0 = k * delta
+    p_1 = k * delta
     val_expB = np.exp(sigma * (s * s * sigma / 2.0 + delta))
-    val_compB = p_0 * (cdf1 - cdf2) * val_expB
+    val_compB = p_1 * (cdf1 - cdf2) * val_expB
     val_expC = np.exp(y1sig * (s * s * y1sig / 2.0 + delta) + y01sig)
     d1 = dy0s + s * y1sig
     cdf_d1 = bs_norm_cdf(d1)
-    val_compC = p_0 * cdf_d1 * val_expC
+    val_compC = p_1 * cdf_d1 * val_expC
     if not gr:
         return val_compB + val_compC
     else:
         pdf2 = bs_norm_pdf(argu2)
         pdf_d1 = bs_norm_pdf(d1)
         grad = np.zeros(2)
-        grad[0] = p_0 * (
+        grad[0] = p_1 * (
             pdf2 * val_expB / s + (cdf_d1 * ny1sig - pdf_d1 / s) * val_expC
         )
-        grad[1] = s * p_0 * H_fun(d1) * val_expC * sigma
+        grad[1] = s * p_1 * H_fun(d1) * val_expC * sigma
         return val_compB + val_compC, grad
 
 
@@ -113,11 +113,11 @@ def val_BC_all(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
     ny1sig = np.outer(sigmas, 1 - y_1)
     d1 = dy0s + s * y1sig
     cdf_d1 = bs_norm_cdf(d1)
-    p_0 = k * deltas
+    p_1 = k * deltas
     val_expBa = np.exp(sigmas * (s * s * sigmas / 2.0 + deltas))
-    val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * (p_0 * val_expBa).reshape((-1, 1))
+    val_compB = (-cdf2 + cdf1a.reshape((-1, 1))) * (p_1 * val_expBa).reshape((-1, 1))
     val_expC = np.exp(y1sig * (s * s * y1sig / 2.0 + deltas.reshape((-1, 1))) + y01sig)
-    val_compC = cdf_d1 * val_expC * p_0.reshape((-1, 1))
+    val_compC = cdf_d1 * val_expC * p_1.reshape((-1, 1))
     if not gr:
         return val_compB + val_compC
     else:
@@ -127,8 +127,8 @@ def val_BC_all(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
         grad[0, :, :] = (
             pdf2 * val_expBa.reshape((-1, 1)) / s
             + (cdf_d1 * ny1sig - pdf_d1 / s) * val_expC
-        ) * p_0.reshape((-1, 1))
-        grad[1, :, :] = s * H_fun(d1) * val_expC * (p_0 * sigmas).reshape((-1, 1))
+        ) * p_1.reshape((-1, 1))
+        grad[1, :, :] = s * H_fun(d1) * val_expC * (p_1 * sigmas).reshape((-1, 1))
         return val_compB + val_compC, grad
 
 
@@ -139,7 +139,7 @@ def val_D(y: np.ndarray, delta: float, s: float, k: float, gr: bool = False) -> 
         y: a 2-vector of 1 contract
         delta: a risk location parameter
         s: the dispersion of losses
-        k: is `p_0/delta`
+        k: is `p_1/delta`
         if `gr` we also return its gradient  wrt `y`
 
     Returns:
@@ -148,15 +148,15 @@ def val_D(y: np.ndarray, delta: float, s: float, k: float, gr: bool = False) -> 
     """
     y_0, y_1 = y
     dy0s = (delta - y_0) / s
-    p_0 = k * delta
+    p_1 = k * delta
     s_H = s * H_fun(dy0s)
-    val_comp = s_H * p_0 * (1 - y_1)
+    val_comp = s_H * p_1 * (1 - y_1)
     if not gr:
         return val_comp
     else:
         grad = np.zeros(2)
-        grad[0] = -bs_norm_cdf(dy0s) * (1 - y_1) * p_0
-        grad[1] = -s_H * p_0
+        grad[0] = -bs_norm_cdf(dy0s) * (1 - y_1) * p_1
+        grad[1] = -s_H * p_1
         return val_comp, grad
 
 
