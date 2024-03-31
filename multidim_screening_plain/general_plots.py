@@ -10,6 +10,7 @@ from multidim_screening_plain.plot_utils import (
     display_variable_d2,
     melt_for_plots,
     plot_best_contracts_d2_m2,
+    plot_constraints_d1,
     plot_constraints_d2,
     plot_contract_by_type_d2,
     plot_contract_models_d1,
@@ -17,6 +18,7 @@ from multidim_screening_plain.plot_utils import (
     plot_second_best_contracts_d2_m2,
     plot_utilities_d1,
     plot_utilities_d2,
+    plot_y_range_m1,
     plot_y_range_m2,
     setup_for_plots,
 )
@@ -97,11 +99,18 @@ def general_plots(model: ScreeningModel) -> tuple[pd.DataFrame, str]:
                 title="Second-best contracts",
                 path=model_plotdir + "/second_best_contracts",
             )
+    elif m == 1:
+        plot_y_range_m1(
+            df_first_and_second,
+            contract_names[0],
+            title="Range of contracts",
+            path=model_plotdir + "/y_range",
+        )
+
+    IR_binds = np.loadtxt(model_resdir + "/IR_binds.txt").astype(int).tolist()
+    IC_binds = np.loadtxt(model_resdir + "/IC_binds.txt").astype(int).tolist()
 
     if d == 2:
-        IR_binds = np.loadtxt(model_resdir + "/IR_binds.txt").astype(int).tolist()
-        IC_binds = np.loadtxt(model_resdir + "/IC_binds.txt").astype(int).tolist()
-
         plot_constraints_d2(
             df_all_results,
             theta_names,
@@ -110,18 +119,24 @@ def general_plots(model: ScreeningModel) -> tuple[pd.DataFrame, str]:
             title="Binding IR and IC constraints",
             path=model_plotdir + "/constraints",
         )
-
-    if d == 1:
-        plot_utilities_d1(
-            df_all_results,
-            theta_names[0],
-            title="Utilities",
-            path=model_plotdir + "/utilities",
-        )
-    elif d == 2:
         plot_utilities_d2(
             df_all_results,
             theta_names,
+            title="Utilities",
+            path=model_plotdir + "/utilities",
+        )
+    elif d == 1:
+        plot_constraints_d1(
+            df_all_results,
+            theta_names[0],
+            IR_binds,
+            IC_binds,
+            title="Binding IR and IC constraints",
+            path=model_plotdir + "/constraints",
+        )
+        plot_utilities_d1(
+            df_all_results,
+            theta_names[0],
             title="Utilities",
             path=model_plotdir + "/utilities",
         )

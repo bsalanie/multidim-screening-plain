@@ -201,12 +201,12 @@ def val_D(y: np.ndarray, delta: float, s: float, k: float, gr: bool = False) -> 
     dy0s = delta / s
     p_1 = k * delta
     s_H = s * H_fun(dy0s)
-    val_comp = p_1 * s_H
+    val_comp = p_1 * s_H * (1.0 - y[0])
     if not gr:
         return val_comp
     else:
         grad = np.zeros(1)
-        grad[0] = -p_1 * bs_norm_cdf(dy0s)
+        grad[0] = -p_1 * s_H
         return val_comp, grad
 
 

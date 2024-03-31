@@ -263,7 +263,7 @@ def proj_K(
     warmstart: bool = True,
     atol_proj: float = 1e-6,
     rtol_proj: float = 1e-4,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, int] | None:
+) -> tuple[np.ndarray, np.ndarray, int, int] | None:
     """Projection of `w` onto `K` by Fast Projected Gradient
 
     Args:
@@ -275,7 +275,7 @@ def proj_K(
         atol_proj: absolute tolerance
         rtol_proj: relative tolerance
     Returns:
-        the projection, the value of `lamb`, where the IR constraints bind,
+        the projection, the value of `lamb`,
         the number of iterations, and a status code
     """
     N = model.N
@@ -304,10 +304,7 @@ def proj_K(
         lamb_extra = lamb1 + (it - 1.0) / (it + 3.0) * (lamb1 - lamb_old)
 
     if converged:
-        IR_binding = np.flatnonzero(
-            (D_star(v.reshape((N, N))) - eta) < -(rtol_proj * eta + atol_proj)
-        ).astype(int)
-        return v, lamb1, IR_binding, it, converged
+        return v, lamb1, it, converged
     else:
         bs_error_abort("failed to converge.")
         return None
@@ -377,7 +374,7 @@ def solve(
         y_bar = y + t_acc * (y - y_old)
         Ly_bar = nlLambda(model, y_bar).reshape(N2)
         proj_res = cast(
-            tuple[np.ndarray, np.ndarray, np.ndarray, int, int],
+            tuple[np.ndarray, np.ndarray, int, int],
             proj_K(
                 model,
                 v_old + sig * Ly_bar,
@@ -386,7 +383,7 @@ def solve(
                 warmstart=warmstart,
             ),
         )
-        v, lamb, IR_binding, n_it_proj, proj_converged = proj_res
+        v, lamb, n_it_proj, proj_converged = proj_res
         # print(f"{npmaxabs(v - v_old)=}")
         # bs_error_abort("stop")
         # Ly = nlLambda(model, y).reshape(N2)
@@ -473,7 +470,6 @@ def solve(
         model=model,
         SB_y=y_mat,
         v_mat=v_mat,
-        IR_binds=IR_binding,
         IC_binds=IC_binding,
         rec_primal_residual=rec_primal_residual,
         rec_dual_residual=rec_dual_residual,
@@ -546,5 +542,8 @@ def compute_utilities(
         dU = npmaxabs(U_second - U_old)
         U_old = U_second
         it += 1
+
+    tol = 1e-6
+    results.IR_binds = np.argwhere(U_second < tol).flatten()
 
     return S_first, U_second, S_second

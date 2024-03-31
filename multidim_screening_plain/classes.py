@@ -120,7 +120,6 @@ class ScreeningResults:
     model: ScreeningModel
     SB_y: np.ndarray
     v_mat: np.ndarray
-    IR_binds: np.ndarray
     IC_binds: np.ndarray
     rec_primal_residual: list
     rec_dual_residual: list
@@ -133,6 +132,7 @@ class ScreeningResults:
     additional_results: list | None = None
     additional_results_names: list | None = None
     excluded_types: list[bool] = field(init=False)
+    IR_binds: np.ndarray = field(init=False)
 
     def add_utilities(
         self, S_first: np.ndarray, U_second: np.ndarray, S_second: np.ndarray

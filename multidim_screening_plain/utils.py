@@ -71,13 +71,13 @@ def check_args(
     if theta is not None:
         if theta.shape != (d,):
             bs_error_abort(
-                f"{function_name}: If theta is given it should be a {d}-vector, not shape"
-                f" {theta.shape}"
+                f"{function_name}: If theta is given it should be a {d}-vector, not"
+                f" shape {theta.shape}"
             )
         if y.shape != (m,):
             bs_error_abort(
-                f"{function_name}: If theta is given, y should be a {m}-vector, not shape"
-                f" {y.shape}"
+                f"{function_name}: If theta is given, y should be a {m}-vector, not"
+                f" shape {y.shape}"
             )
     else:
         if y.ndim != 1:
@@ -86,8 +86,8 @@ def check_args(
             )
         if y.size % m != 0:
             bs_error_abort(
-                f"{function_name}: y should have a number of elements multiple of {m}, not"
-                f" {y.size}"
+                f"{function_name}: y should have a number of elements multiple of {m},"
+                f" not {y.size}"
             )
 
 

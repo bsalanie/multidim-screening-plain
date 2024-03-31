@@ -208,6 +208,51 @@ def plot_y_range_m2(
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
 
 
+def plot_y_range_m1(
+    df_first_and_second: pd.DataFrame,
+    contract_name: str,
+    title: str | None = None,
+    path: str | None = None,
+    **kwargs: dict | None,
+) -> None:
+    """the optimal contracts for both first and second best in contract space"""
+    ch = (
+        alt.Chart(df_first_and_second)
+        .mark_point()
+        .encode(x=alt.X(f"{contract_name}:Q"), color="Model:N")
+    )
+    if title:
+        ch = ch.properties(title=title)
+    _maybe_save(ch, path)
+    # first = df_first_and_second.query('Model == "First-best"')[contract_names]
+    # second = df_first_and_second.query('Model == "Second-best"')[contract_names]
+
+    # y_0_name = contract_names[0]
+    # fig, ax = plt.subplots(
+    #     1, 1, figsize=figsize, subplot_kw=kwargs
+    # )  # subplot_kw=dict(aspect='equal',)
+    # _ = ax.scatter(
+    #     second[y_0_name].values,
+    #     second[y_1_name].values,
+    #     color="tab:blue",
+    #     alpha=0.5,
+    #     s=s,
+    #     label="Second-best",
+    # )
+    # _ = ax.scatter(
+    #     first[y_0_name].values,
+    #     first[y_1_name].values,
+    #     color="tab:pink",
+    #     s=s,
+    #     label="First-best",
+    # )
+    # _ = ax.set_xlabel(y_0_name)
+    # _ = ax.set_ylabel(y_1_name)
+    # _ = ax.set_title(title)
+    # if path is not None:
+    #     fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
+
+
 def plot_constraints_d2(
     df_all_results: pd.DataFrame,
     theta_names: list[str],
@@ -279,6 +324,78 @@ def plot_constraints_d2(
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
 
 
+def plot_constraints_d1(
+    df_all_results: pd.DataFrame,
+    theta_name: str,
+    IR_binds: list,
+    IC_binds: list,
+    figsize: tuple = (5, 5),
+    s: float = 20,
+    title: str | None = None,
+    path: str | None = None,
+    **kwargs: dict | None,
+) -> None:
+    """the original scatterplot of binding constraints.
+
+    Args:
+        df_all_results: the dataframe of results
+        IR_binds: the list of types for which  IR binds
+        IC_binds: the list of pairs (i, j) for which i is indifferent between his contract and j's
+    Returns:
+        nothing. Just plots the constraints.
+    """
+    thetas = df_all_results[theta_name].values.round(2)
+    print(f"{thetas[IR_binds]=}")
+    IC = "IC" if title else "IC binding"
+    IR = "IR" if title else "IR binding"
+    fig, ax = plt.subplots(
+        1, 1, figsize=figsize, subplot_kw=kwargs
+    )  # subplot_kw=dict(aspect='equal',)
+    _ = ax.scatter(
+        thetas[IR_binds],
+        thetas[IR_binds],
+        facecolors="w",
+        edgecolors="k",
+        s=s,
+        zorder=2.5,
+    )
+    _ = ax.scatter([], [], marker=">", c="k", label=IC)
+    _ = ax.scatter(
+        thetas[IR_binds],
+        thetas[IR_binds],
+        label=IR,
+        c="tab:green",
+        s=s,
+        zorder=2.5,
+    )
+    for i, j in IC_binds:
+        # if not (i in IR_binds or j in IR_binds):
+        _ = drawArrow_2dim(
+            ax,
+            thetas[i],
+            thetas[j],
+            thetas[i],
+            thetas[j],
+        )
+    _ = ax.set_xlabel(theta_name)
+    _ = ax.set_ylabel(theta_name)
+
+    if title is None:
+        _ = ax.legend(
+            bbox_to_anchor=(0.0, 1.02, 1.0, 0.102),
+            loc="lower left",
+            ncols=2,
+            mode="expand",
+            borderaxespad=0.0,
+        )
+    else:
+        _ = ax.set_title(title)
+        _ = ax.legend(bbox_to_anchor=(1.02, 1.0), loc="lower right")
+
+    if path is not None:
+        fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
+
+
 def plot_utilities_d1(
     df_all_results: pd.DataFrame,
     theta_name: str,
@@ -294,6 +411,7 @@ def plot_utilities_d1(
         id_vars=[theta_name],
         value_vars=["Informational rent", "Profit", "Lost surplus"],
     )
+    print(df2m)
 
     our_colors = alt.Scale(
         domain=["Informational rent", "Profit", "Lost surplus"],
@@ -304,7 +422,7 @@ def plot_utilities_d1(
         .mark_bar()
         .encode(
             x=alt.X(
-                "Risk location:Q",
+                f"{theta_name}:Q",
                 scale=alt.Scale(domain=set_axis(df2[theta_name].values)),
             ),
             y=alt.Y("value"),
