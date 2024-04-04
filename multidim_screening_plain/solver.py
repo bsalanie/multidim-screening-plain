@@ -543,7 +543,7 @@ def compute_utilities(
         U_old = U_second
         it += 1
 
-    tol = 1e-6
+    tol = 1e-4
     results.IR_binds = np.argwhere(U_second < tol).flatten()
 
     return S_first, U_second, S_second

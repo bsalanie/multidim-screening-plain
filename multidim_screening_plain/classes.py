@@ -175,6 +175,7 @@ class ScreeningResults:
         table.add_column("1B surplus", justify="center", style="red", no_wrap=True)
         table.add_column("2B surplus", justify="center", style="blue", no_wrap=True)
         table.add_column("Info. rent", justify="center", style="black", no_wrap=True)
+        table.add_column("2B profits", justify="center", style="black", no_wrap=True)
 
         elements_list = [df_output["theta_0"]]
         for i in range(1, d):
@@ -184,7 +185,12 @@ class ScreeningResults:
         for j in range(m):
             elements_list.append(df_output[f"y_{j}"])
         elements_list.extend(
-            [df_output["FB_surplus"], df_output["SB_surplus"], df_output["info_rents"]]
+            [
+                df_output["FB_surplus"],
+                df_output["SB_surplus"],
+                df_output["info_rents"],
+                df_output["SB_profits"],
+            ]
         )
 
         for elements_row in zip(*elements_list, strict=True):
@@ -223,6 +229,7 @@ class ScreeningResults:
             + y_columns
             + ["FB_surplus", "SB_surplus", "info_rents"]
         ]
+        df_output["SB_profits"] = df_output["SB_surplus"] - df_output["info_rents"]
 
         if self.additional_results is not None:
             additional_results_names = cast(list, self.additional_results_names)
@@ -236,6 +243,13 @@ class ScreeningResults:
         console.print("\n" + "-" * 80 + "\n", style="bold blue")
         table = self.make_table(df_output)
         console.print(table)
+
+        FB_total_profits = df_output["FB_surplus"].sum()
+        SB_total_profits = df_output["SB_profits"].sum()
+        console.print(f"\nTotal profits are {FB_total_profits: >.3f} in the first best")
+        console.print(
+            f"             and {SB_total_profits: >.3f} in the second best.\n"
+        )
 
         model_resdir = cast(Path, model.resdir)
         df_output[y_columns].to_csv(

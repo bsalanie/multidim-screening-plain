@@ -345,7 +345,6 @@ def plot_constraints_d1(
         nothing. Just plots the constraints.
     """
     thetas = df_all_results[theta_name].values.round(2)
-    print(f"{thetas[IR_binds]=}")
     IC = "IC" if title else "IC binding"
     IR = "IR" if title else "IR binding"
     fig, ax = plt.subplots(
@@ -411,7 +410,6 @@ def plot_utilities_d1(
         id_vars=[theta_name],
         value_vars=["Informational rent", "Profit", "Lost surplus"],
     )
-    print(df2m)
 
     our_colors = alt.Scale(
         domain=["Informational rent", "Profit", "Lost surplus"],

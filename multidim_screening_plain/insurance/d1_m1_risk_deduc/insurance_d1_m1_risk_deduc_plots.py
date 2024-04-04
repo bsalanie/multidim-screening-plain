@@ -15,7 +15,7 @@ def plot_calibration(
 ) -> alt.Chart:
     dfm = pd.melt(
         df_all_results,
-        id_vars=["Risk location"],
+        id_vars=["Risk"],
         value_vars=[
             "Actuarial premium at first-best",
             "Cost of non-insurance",
@@ -24,17 +24,17 @@ def plot_calibration(
             "Value of first-best coverage",
         ],
     )
-    for var in ["Risk location", "value"]:
+    for var in ["Risk", "value"]:
         dfm[var] = dfm[var].round(3)
 
     base = alt.Chart().encode(
         x=alt.X(
-            "Risk location:Q",
+            "Risk:Q",
             title="Risk location",
-            scale=alt.Scale(domain=set_axis(dfm["Risk location"].values)),
+            scale=alt.Scale(domain=set_axis(dfm["Risk"].values)),
         ),
         y=alt.Y("value:Q"),
-        tooltip=["Risk location", "value"],
+        tooltip=["Risk", "value"],
     )
     ch_points = base.mark_point(filled=True, size=50)
     ch_lines = base.mark_line(strokeWidth=0.5)
