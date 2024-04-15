@@ -280,10 +280,9 @@ def add_results(
         theta_i = theta_mat[i, :]
         delta_i = theta_i[0]
         FB_values_coverage[i] = b_fun(model, FB_i, theta=theta_i)
-        FB_actuarial_premia[i] = val_D(FB_i, delta_i, s, loss)
         SB_i = SB_y[i]
         SB_values_coverage[i] = b_fun(model, SB_i, theta=theta_i)
-        SB_actuarial_premia[i] = val_D(SB_i, delta_i, s, loss)
+        SB_actuarial_premia[i] = val_D(SB_i, delta_i, loss)
 
     deltas = model.theta_mat[:, 0]
     results.additional_results = [

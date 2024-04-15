@@ -1,73 +1,149 @@
-# """direct calculation of the 1st best,
-# and of derivatives of the insuree's gross utility
-# """
+"""direct calculations"""
 
-# import numpy as np
-# from bs_python_utils.bs_opt import check_gradient_scalar_function, minimize_free
-# from bs_python_utils.bsutils import print_stars
+import altair as alt
+import numpy as np
+import pandas as pd
+from altair_saver import save as alt_save
+from bs_python_utils.bsnputils import print_quantiles
 
-# from multidim_screening_plain.utils import H_fun, bs_norm_cdf, bs_norm_pdf, print_matrix
+sigma, s, loading, loss = 0.6, 2.0, 0.25, 6.0
 
-# sigma, s, loading, loss = 0.6, 2.0, 0.25, 6.0
-
-# dim_grid = 10
-# probas = np.linspace(4.0, 8.0, num=dim_grid)
-
-# vals_A = 1.0 - probas
-
-
-# def gross_CE(proba, deduc):
-#     expval = np.exp(sigma * deduc)
-#     log_arg = 1.0 - proba + proba * expval
-#     val = -np.log(log_arg) / sigma
-#     grad_p = -(expval - 1.0) / log_arg / sigma
-#     grad_d = -proba * expval / log_arg
-#     return val, grad_p, grad_d
+dim_grid = 50
+plow, phigh = 0.04, 0.2
+probas = np.linspace(plow, phigh, num=dim_grid)
+dlow, dhigh = 0.0, loss
+deducs = np.linspace(dlow, dhigh, num=dim_grid)
 
 
-# def profit(proba, deduc):
-
-#     return val, grad_p, grad_d, cross_dy
-
-
-# def obj_grad_FB(yv: np.ndarray, args: list, gr: bool = False):
-#     p_1v, delta, val_A, grad_A = args
-#     val, grad, *_ = gross_utility(yv, args)
-#     val, grad = -val, -grad
-#     dy0s = (delta - yv) / s
-#     cdf0, H_0 = bs_norm_cdf(dy0s), H_fun(dy0s)
-#     val += (1.0 + loading) * p_1v * s * H_0
-#     grad -= (1.0 + loading) * p_1v * cdf0
-#     if gr:
-#         return val, grad
-#     else:
-#         return val
+def log_arg(p, d):
+    return 1.0 - p + p * np.exp(sigma * d)
 
 
-# def obj_FB(y: np.ndarray, args: list):
-#     return obj_grad_FB(y, args)
+def u(p, d):
+    return -np.log(log_arg(p, d)) / sigma
 
 
-# def grad_FB(y: np.ndarray, args: list):
-#     return obj_grad_FB(y, args, gr=True)[1]
+def v(p, d):
+    return u(p, d) - u(p, loss)
 
 
-# x = np.zeros(dim_grid)
-
-# gu = []
-# for i in range(dim_grid):
-#     args = [probas[i]]
-#     y_init = np.array([4.0])
-#     check_gradient_scalar_function(obj_grad_FB, y_init, args=args)
-#     res_FB = minimize_free(obj_FB, grad_FB, y_init, args=args, bounds=[(0.0, 10.0)])
-#     print(res_FB)
-#     x[i] = res_FB.x[0]
-#     gu.append(gross_utility(res_FB.x, args))
+def u_p(p, d):
+    return -(np.exp(sigma * d) - 1.0) / log_arg(p, d) / sigma
 
 
-# grad_y = np.array([g[1] for g in gu])
-# grad_d = np.array([g[2] for g in gu])
-# cross_dy = np.array([g[3] for g in gu])
-# print_stars("FIRST BEST")
-# print("     delta      y_1         u_y       u_d        u_dy")
-# print_matrix(np.column_stack((probas, x, grad_y, grad_d, cross_dy)))
+def v_p(p, d):
+    return u_p(p, d) - u_p(p, loss)
+
+
+def v_d(p, d):
+    return -p * np.exp(sigma * d) / log_arg(p, d)
+
+
+def v_pd(p, d):
+    log_arg_val = log_arg(p, d)
+    return -np.exp(sigma * d) / (log_arg_val * log_arg_val)
+
+
+def v_ppd(p, d):
+    exp_val = np.exp(sigma * d)
+    log_arg_val = log_arg(p, d)
+    return 2.0 * exp_val * (exp_val - 1.0) / (log_arg_val**3)
+
+
+def v_pdd(p, d):
+    exp_val = np.exp(sigma * d)
+    log_arg_val = log_arg(p, d)
+    return sigma * exp_val * (p * exp_val - 1.0 + p) / (log_arg_val**3)
+
+
+def G(k, d):
+    p = plow + (phigh - plow) / (dim_grid - 1) * k
+    return (v(p, d) - (1.0 + loading) * p * (loss - d)) / dim_grid - (
+        1.0 - (k + 1) / dim_grid
+    ) * v_p(p, d)
+
+
+def G_d(k, d):
+    p = plow + (phigh - plow) / (dim_grid - 1) * k
+    return (v_d(p, d) + (1.0 + loading) * p) / dim_grid - (
+        1.0 - (k + 1) / dim_grid
+    ) * v_pd(p, d)
+
+
+def G_pd(k, d):
+    p = plow + (phigh - plow) / (dim_grid - 1) * k
+    return (2.0 * v_pd(p, d) + (1.0 + loading)) / dim_grid - (
+        1.0 - (k + 1) / dim_grid
+    ) * v_ppd(p, d)
+
+
+def G_dd(k, d):
+    p = plow + (phigh - plow) / (dim_grid - 1) * k
+    return v_pd(p, d) / dim_grid - (1.0 - (k + 1) / dim_grid) * v_pdd(p, d)
+
+
+G_vals = np.zeros((dim_grid, dim_grid))
+Gp_vals = np.zeros((dim_grid, dim_grid))
+Gd_vals = np.zeros((dim_grid, dim_grid))
+Gpd_vals = np.zeros((dim_grid, dim_grid))
+Gdd_vals = np.zeros((dim_grid, dim_grid))
+
+
+p, d = np.meshgrid(probas, deducs)
+for k in range(dim_grid):
+    for ll in range(dim_grid):
+        ded = deducs[ll]
+        G_vals[k, ll] = G(k, ded)
+        Gd_vals[k, ll] = G_d(k, ded)
+        Gpd_vals[k, ll] = G_pd(k, ded)
+        Gdd_vals[k, ll] = G_dd(k, ded)
+
+
+qs = np.array([0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95]) / 10
+print("G_vals:")
+print_quantiles(G_vals, qs)
+print("Gd_vals:")
+print_quantiles(Gd_vals, qs)
+print("Gpd_vals:")
+print_quantiles(Gpd_vals, qs)
+print("Gdd_vals:")
+print_quantiles(Gdd_vals, qs)
+
+
+def my_heatmap(variable, name):
+    pl = pd.DataFrame(
+        {"p": p.ravel(), "D": d.ravel(), name: np.clip(variable.ravel(), -0.2, 0.2)}
+    )
+    ch = (
+        alt.Chart(pl)
+        .mark_rect()
+        .encode(x=alt.X("p:Q"), y=alt.Y("D:Q"), color=alt.Color(f"{name}:Q"))
+    )
+    alt_save(ch, f"{name}_vals.html")
+
+
+my_heatmap(G_vals, "G")
+my_heatmap(Gd_vals, "Gd")
+my_heatmap(Gdd_vals, "Gdd")
+my_heatmap(Gpd_vals, "Gpd")
+
+# Gpl = sns.heatmap(G_vals)
+# Gpl.set_title("Values of G")
+# plt.xticks(probas, rotation=90)
+# plt.savefig("G_vals.png")
+# plt.clf()
+
+# Gdpl = sns.heatmap(Gd_vals)
+# Gdpl.set_title("Values of G_d")
+# plt.savefig("Gd_vals.png")
+# plt.clf()
+
+# Gddpl = sns.heatmap(Gdd_vals)
+# Gddpl.set_title("Values of G_dd")
+# plt.savefig("Gdd_vals.png")
+# plt.clf()
+
+# Gpdpl = sns.heatmap(Gpd_vals)
+# Gpdpl.set_title("Values of G_pd")
+# plt.savefig("Gpd_vals.png")
+# plt.clf()

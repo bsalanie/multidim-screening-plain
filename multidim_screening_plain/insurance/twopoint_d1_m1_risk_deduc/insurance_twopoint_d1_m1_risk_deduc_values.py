@@ -124,7 +124,7 @@ def val_BC_1(
         return value_BC
     else:
         grad = np.zeros(1)
-        grad[0] = sigma * val_BC
+        grad[0] = sigma * value_BC
         return value_BC, grad
 
 
@@ -132,13 +132,13 @@ def val_BC_all(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
     params = cast(np.ndarray, model.params)
     sigma = params[0]
     deltas = model.theta_mat[:, 0]
-    value_BC = np.outer(deltas, np.exp(sigma * y))
+    values_BC = np.outer(deltas, np.exp(sigma * y))
     if not gr:
-        return value_BC
+        return values_BC
     else:
         grad = np.zeros((1, deltas.size, y.size))
-        grad[0, :, :] = sigma * value_BC
-    return value_BC, grad
+        grad[0, :, :] = sigma * values_BC
+    return values_BC, grad
 
 
 def val_I_no_insurance(model: ScreeningModel, theta: np.ndarray | None = None) -> Any:
@@ -156,7 +156,7 @@ def val_I_no_insurance(model: ScreeningModel, theta: np.ndarray | None = None) -
         return values_BC + values_A
 
 
-def val_D(y: np.ndarray, delta: float, loss: float, gr: bool = False) -> Any:
+def val_D(y: np.ndarray, delta: float, loss: float, gr: bool = False) -> float:
     """evaluates `D`, the actuarial premium
 
     Args:
