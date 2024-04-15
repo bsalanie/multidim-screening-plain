@@ -19,15 +19,14 @@ vals_A = 1.0 - probas
 def gross_CE(proba, deduc):
     expval = np.exp(sigma * deduc)
     log_arg = 1.0 - proba + proba * expval
-    val = - np.log(log_arg) / sigma
-    grad_p = - (expval - 1.0) / log_arg / sigma
-    grad_d = - proba * expval / log_arg
+    val = -np.log(log_arg) / sigma
+    grad_p = -(expval - 1.0) / log_arg / sigma
+    grad_d = -proba * expval / log_arg
     return val, grad_p, grad_d
 
 
 def profit(proba, deduc):
 
-    
     return val, grad_p, grad_d, cross_dy
 
 
