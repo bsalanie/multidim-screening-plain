@@ -156,7 +156,7 @@ def val_I_no_insurance(model: ScreeningModel, theta: np.ndarray | None = None) -
         return values_BC + values_A
 
 
-def val_D(y: np.ndarray, delta: float, loss: float, gr: bool = False) -> float:
+def val_D(y: np.ndarray, delta: float, loss: float, gr: bool = False) -> Any:
     """evaluates `D`, the actuarial premium
 
     Args:
