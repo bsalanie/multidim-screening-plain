@@ -81,11 +81,11 @@ def b_fun_all(
     value_non_insured = val_I_no_insurance(model)
     value_insured = val_I(model, y, gr=gr)
     if not gr:
-        diff_logs = np.log(value_non_insured) - np.log(value_insured)
+        diff_logs = -np.log(value_insured) + np.log(value_non_insured).reshape((-1, 1))
         return diff_logs / sigma
     else:
         val_insured, dval_insured = value_insured
-        diff_logs = np.log(value_non_insured) - np.log(val_insured)
+        diff_logs = -np.log(val_insured) + np.log(value_non_insured).reshape((-1, 1))
         denom_inv = 1.0 / (val_insured * sigma)
         grad = np.empty((1, model.N, y.size))
         grad[0, :, :] = -dval_insured[0, :, :] * denom_inv

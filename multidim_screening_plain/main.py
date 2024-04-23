@@ -32,6 +32,9 @@ def main(model_type, model_instance):
     config = dotenv_values(
         Path.cwd() / "multidim_screening_plain" / f"{config_dir}/{config_file}"
     )
+    from pprint import pprint
+
+    pprint(config)
 
     model = setup_model(config, model_type, model_instance)
     module = model.model_module

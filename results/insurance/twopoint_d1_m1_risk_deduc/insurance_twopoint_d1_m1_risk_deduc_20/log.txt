@@ -23,3 +23,8 @@ ara = 0.6, s = 2.0, loading = 0.25, loss = 6.0
 convergence = True, iterations = 12429, elapsed time = 0:00:23.561947
 primal residual = 6.19e-01 tol,  dual residual = 9.97e-01 tol
 
+N = 20, tau = 8.42e-01, sig = 8.42e-01, step ratio = 1.0, primal tol = 4.47e-05, dual tol = 2.00e-04
+ara = 0.6, loading = 0.25, loss = 6.0
+convergence = True, iterations = 6566, elapsed time = 0:00:18.116347
+primal residual = 9.47e-01 tol,  dual residual = 9.84e-01 tol
+

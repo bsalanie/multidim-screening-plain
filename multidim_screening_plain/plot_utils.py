@@ -367,6 +367,7 @@ def plot_constraints_d1(
         s=s,
         zorder=2.5,
     )
+
     for i, j in IC_binds:
         # if not (i in IR_binds or j in IR_binds):
         _ = drawArrow_2dim(

@@ -47,8 +47,8 @@ def val_I_1(
     gr: bool = False,
 ) -> Any:
     """`val_I` for one type and one contract"""
-    delta = theta[0]
-    value_A = cast(float, val_A(delta))
+    p = theta[0]
+    value_A = cast(float, val_A(p))
     value_BC = val_BC_1(model, y, theta, gr=gr)
     if not gr:
         return value_BC + value_A
@@ -59,8 +59,8 @@ def val_I_1(
 
 def val_I_all(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
     """`val_I` for all types and all contracts in `y`"""
-    deltas = model.theta_mat[:, 0]
-    values_A = cast(np.ndarray, val_A(deltas))
+    probs = model.theta_mat[:, 0]
+    values_A = cast(np.ndarray, val_A(probs))
     values_BC = val_BC_all(model, y, gr=gr)
     if not gr:
         obj = values_BC + values_A.reshape((-1, 1))
@@ -70,17 +70,17 @@ def val_I_all(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
         return vals + values_A.reshape((-1, 1)), grad
 
 
-def val_A(deltas: np.ndarray | float) -> np.ndarray | float:
-    """evaluates `A(delta,s,k)`, the probability of no loss
-    for all values of `delta` in `deltas`
+def val_A(probs: np.ndarray | float) -> np.ndarray | float:
+    """evaluates `A(p,s,k)`, the probability of no loss
+    for all values of `p` in `probs`
 
     Args:
-        deltas: a `q`-vector of risk parameters, or a single value
+        probs: a `q`-vector of risk parameters, or a single value
 
     Returns:
-        the values of `A(deltas)` as a `q`-vector, or a single value
+        the values of `A(probs)` as a `q`-vector, or a single value
     """
-    return 1.0 - deltas
+    return 1.0 - probs
 
 
 def val_BC(
@@ -118,8 +118,8 @@ def val_BC_1(
     """`val_BC` for one type and one contract"""
     params = cast(np.ndarray, model.params)
     sigma = params[0]
-    delta, y_0 = theta[0], y[0]
-    value_BC = delta * np.exp(sigma * y_0)
+    p, y_0 = theta[0], y[0]
+    value_BC = p * np.exp(sigma * y_0)
     if not gr:
         return value_BC
     else:
@@ -131,12 +131,12 @@ def val_BC_1(
 def val_BC_all(model: ScreeningModel, y: np.ndarray, gr: bool = False) -> Any:
     params = cast(np.ndarray, model.params)
     sigma = params[0]
-    deltas = model.theta_mat[:, 0]
-    values_BC = np.outer(deltas, np.exp(sigma * y))
+    probs = model.theta_mat[:, 0]
+    values_BC = np.outer(probs, np.exp(sigma * y))
     if not gr:
         return values_BC
     else:
-        grad = np.zeros((1, deltas.size, y.size))
+        grad = np.zeros((1, probs.size, y.size))
         grad[0, :, :] = sigma * values_BC
     return values_BC, grad
 
@@ -145,36 +145,36 @@ def val_I_no_insurance(model: ScreeningModel, theta: np.ndarray | None = None) -
     params = cast(np.ndarray, model.params)
     sigma, *_, loss = params
     if theta is not None:
-        delta = theta[0]
-        value_A = val_A(delta)
-        value_BC = delta * np.exp(sigma * loss)
+        p = theta[0]
+        value_A = val_A(p)
+        value_BC = p * np.exp(sigma * loss)
         return value_BC + value_A
     else:
-        deltas = model.theta_mat[:, 0]
-        values_A = cast(np.ndarray, val_A(deltas))
-        values_BC = deltas * np.exp(sigma * loss)
+        probs = model.theta_mat[:, 0]
+        values_A = cast(np.ndarray, val_A(probs))
+        values_BC = probs * np.exp(sigma * loss)
         return values_BC + values_A
 
 
-def val_D(y: np.ndarray, delta: float, loss: float, gr: bool = False) -> Any:
+def val_D(y: np.ndarray, p: float, loss: float, gr: bool = False) -> Any:
     """evaluates `D`, the actuarial premium
 
     Args:
         y: a  1-vector with a deductible value
-        delta: a risk location parameter
-        k: `p_1/delta`
+        p: a risk location parameter
+        k: `p_1/p`
         if `gr` we also return its gradient  wrt `y`
 
     Returns:
         the value of `D`
             and its gradient  wrt `y` if `gr` is `True`
     """
-    val_comp = delta * (loss - y[0])
+    val_comp = p * (loss - y[0])
     if not gr:
         return val_comp
     else:
         grad = np.zeros(1)
-        grad[0] = -delta
+        grad[0] = -p
         return val_comp, grad
 
 

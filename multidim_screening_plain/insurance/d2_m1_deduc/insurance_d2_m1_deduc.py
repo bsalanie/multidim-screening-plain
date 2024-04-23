@@ -64,11 +64,15 @@ def b_fun(
         value_non_insured = val_I(model, y_no_insur)
         value_insured = val_I(model, y, gr=gr)
         if not gr:
-            diff_logs = np.log(value_non_insured) - np.log(value_insured)
+            diff_logs = -np.log(value_insured) + np.log(value_non_insured).reshape(
+                (-1, 1)
+            )
             return diff_logs / sigmas.reshape((-1, 1))
         else:
             val_insured, dval_insured = value_insured
-            diff_logs = np.log(value_non_insured) - np.log(val_insured)
+            diff_logs = -np.log(val_insured) + np.log(value_non_insured).reshape(
+                (-1, 1)
+            )
             denom_inv = 1.0 / (val_insured * sigmas.reshape((-1, 1)))
             grad = np.empty((1, sigmas.size, y.size))
             grad = -dval_insured * denom_inv
@@ -134,7 +138,7 @@ def create_initial_contracts(
         model_resdir = cast(Path, model.resdir)
         y_init = np.loadtxt(model_resdir / "current_y.txt")
         EPS = 0.001
-        MAX_DEDUC = 5.0
+        MAX_DEDUC = 10.0
         set_not_insured = {i for i in range(N) if y_init[i] > MAX_DEDUC - EPS}
         set_fixed_y = set_not_insured
 

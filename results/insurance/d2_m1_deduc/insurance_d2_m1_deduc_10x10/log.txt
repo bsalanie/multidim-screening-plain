@@ -1,35 +1,5 @@
-N = 100, tau = 2.04e-01, sig = 2.04e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
-s = 4.0, loading = 0.25
-convergence = False, iterations = 100000, elapsed time = 0:13:51.403754
-primal residual = 1.16e+02 tol,  dual residual = 5.82e+00 tol
-
-N = 100, tau = 2.04e-01, sig = 2.04e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
-s = 4.0, loading = 0.25
-convergence = False, iterations = 100000, elapsed time = 0:16:12.877611
-primal residual = 1.25e+02 tol,  dual residual = 8.74e+00 tol
-
-N = 100, tau = 2.04e-01, sig = 2.04e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
-s = 4.0, loading = 0.25
-convergence = False, iterations = 10000, elapsed time = 0:01:12.787793
-primal residual = 1.81e+02 tol,  dual residual = 2.55e+01 tol
-
-N = 100, tau = 2.04e-01, sig = 2.04e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
-s = 4.0, loading = 0.25
-convergence = False, iterations = 2000, elapsed time = 0:00:16.459813
-primal residual = 1.16e+02 tol,  dual residual = 3.98e+01 tol
-
-N = 100, tau = 2.04e-01, sig = 2.04e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
-s = 4.0, loading = 0.25
-convergence = False, iterations = 20000, elapsed time = 0:03:06.177962
-primal residual = 2.31e+02 tol,  dual residual = 2.15e+01 tol
-
-N = 100, tau = 2.04e-01, sig = 2.04e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
-s = 4.0, loading = 0.25
-convergence = False, iterations = 100000, elapsed time = 0:12:58.830455
-primal residual = 9.62e+01 tol,  dual residual = 1.02e+01 tol
-
-N = 100, tau = 2.05e-01, sig = 2.05e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
-s = 4.0, loading = 0.25
-convergence = False, iterations = 2000, elapsed time = 0:00:15.277225
-primal residual = 8.29e+01 tol,  dual residual = 8.18e+00 tol
+N = 100, tau = 2.57e-01, sig = 2.57e-01, step ratio = 1.0, primal tol = 1.00e-04, dual tol = 1.00e-03
+s = 2.0, loading = 0.25, k = 0.012
+convergence = False, iterations = 50000, elapsed time = 0:16:02.387167
+primal residual = 1.40e+02 tol,  dual residual = 1.44e+01 tol
 

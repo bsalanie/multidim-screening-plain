@@ -51,11 +51,11 @@ def b_fun(
         value_insured = val_I(model, y, theta=theta, gr=gr)
         sigma = theta[0]
         if not gr:
-            diff_logs = np.log(value_non_insured) - np.log(value_insured)
+            diff_logs = -np.log(value_insured) + np.log(value_non_insured)
             return diff_logs / sigma
         else:
             val_insured, dval_insured = value_insured
-            diff_logs = np.log(value_non_insured) - np.log(val_insured)
+            diff_logs = -np.log(val_insured) + np.log(value_non_insured)
             grad = -dval_insured / (val_insured * sigma)
             return diff_logs / sigma, grad
     else:
@@ -65,11 +65,15 @@ def b_fun(
         value_non_insured = val_I(model, y_no_insur)
         value_insured = val_I(model, y, gr=gr)
         if not gr:
-            diff_logs = np.log(value_non_insured) - np.log(value_insured)
+            diff_logs = -np.log(value_insured) + np.log(value_non_insured).reshape(
+                (-1, 1)
+            )
             return diff_logs / sigmas.reshape((-1, 1))
         else:
             val_insured, dval_insured = value_insured
-            diff_logs = np.log(value_non_insured) - np.log(val_insured)
+            diff_logs = -np.log(val_insured) + np.log(value_non_insured).reshape(
+                (-1, 1)
+            )
             denom_inv = 1.0 / (val_insured * sigmas.reshape((-1, 1)))
             grad = np.empty((2, sigmas.size, y.size // 2))
             grad[0, :, :] = -dval_insured[0, :, :] * denom_inv
