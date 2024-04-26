@@ -104,3 +104,8 @@ s = 2.0, loading = 0.25, k = 0.012
 convergence = True, iterations = 1126, elapsed time = 0:00:04.777259
 primal residual = 9.80e-01 tol,  dual residual = 9.29e-01 tol
 
+N = 25, tau = 1.26e-01, sig = 1.26e-01, step ratio = 1.0, primal tol = 7.07e-05, dual tol = 2.50e-04
+s = 2.0, loading = 0.25, k = 0.012
+convergence = True, iterations = 15931, elapsed time = 0:01:50.344008
+primal residual = 9.93e-01 tol,  dual residual = 8.95e-01 tol
+
