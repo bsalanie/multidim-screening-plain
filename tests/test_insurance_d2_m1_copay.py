@@ -1,14 +1,21 @@
 import numpy as np
 from bs_python_utils.bs_opt import check_gradient_scalar_function
 
-from multidim_screening_plain.insurance_d2_m1_copay import S_fun, b_fun
-from multidim_screening_plain.insurance_d2_m1_copay_values import val_BC, val_D, val_I
+from multidim_screening_plain.insurance.d2_m1_copay.insurance_d2_m1_copay import (
+    S_fun,
+    b_fun,
+)
+from multidim_screening_plain.insurance.d2_m1_copay.insurance_d2_m1_copay_values import (
+    val_BC,
+    val_D,
+    val_I,
+)
 
 
 def test_dvalBC(build_model):
-    model = build_model("insurance_d2_m1_copay")
+    model = build_model("insurance", "d2_m1_copay")
     y = np.array([0.6])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def BCdBC(z, args, gr):
         if gr:
@@ -24,15 +31,16 @@ def test_dvalBC(build_model):
 
 def test_dvalD():
     y = np.array([0.3])
-    delta = -6.0
-    s = 4.0
+    delta = 6.0
+    s = 2.0
+    k = 0.012
 
     def DdD(z, args, gr):
         if gr:
-            obj_grad = val_D(z, delta, s, gr=True)
+            obj_grad = val_D(z, delta, s, k, gr=True)
             return obj_grad
         else:
-            obj = val_D(z, delta, s)
+            obj = val_D(z, delta, s, k)
             return obj
 
     anal, num = check_gradient_scalar_function(DdD, y, args=[])
@@ -40,9 +48,9 @@ def test_dvalD():
 
 
 def test_dvalI(build_model):
-    model = build_model("insurance_d2_m1_copay")
+    model = build_model("insurance", "d2_m1_copay")
     y = np.array([0.3])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def IdI(z, args, gr):
         if gr:
@@ -73,9 +81,9 @@ def test_dvalI(build_model):
 
 
 def test_db(build_model):
-    model = build_model("insurance_d2_m1_copay")
+    model = build_model("insurance", "d2_m1_copay")
     y = np.array([0.3])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def bdb(z, args, gr):
         if gr:
@@ -90,9 +98,9 @@ def test_db(build_model):
 
 
 def test_dS(build_model):
-    model = build_model("insurance_d2_m1_copay")
+    model = build_model("insurance", "d2_m1_copay")
     y = np.array([0.3])
-    theta = np.array([0.5, -6.0])
+    theta = np.array([0.5, 6.0])
 
     def SdS(z, args, gr):
         if gr:

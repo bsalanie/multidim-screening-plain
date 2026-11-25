@@ -1,11 +1,11 @@
 import numpy as np
 from bs_python_utils.bs_opt import check_gradient_scalar_function
 
-from multidim_screening_plain.jointtax_d2_m2 import S_fun, b_fun
+from multidim_screening_plain.jointtax.d2_m2.jointtax_d2_m2 import S_fun, b_fun
 
 
 def test_db(build_model):
-    model = build_model
+    model = build_model("jointtax", "d2_m2")
     y = np.array([1.7, 0.2])
     theta = np.array([1.5, 0.5])
 
@@ -22,7 +22,7 @@ def test_db(build_model):
 
 
 def test_dS(build_model):
-    model = build_model
+    model = build_model("jointtax", "d2_m2")
     y = np.array([1.7, 0.2])
     theta = np.array([1.5, 0.5])
 

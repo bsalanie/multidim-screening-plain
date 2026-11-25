@@ -1,8 +1,11 @@
 import numpy as np
 from bs_python_utils.bs_opt import check_gradient_scalar_function
 
-from multidim_screening_plain.insurance_d1_m1_risk_deduc import S_fun, b_fun
-from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
+from multidim_screening_plain.insurance.d1_m1_risk_deduc.insurance_d1_m1_risk_deduc import (
+    S_fun,
+    b_fun,
+)
+from multidim_screening_plain.insurance.d1_m1_risk_deduc.insurance_d1_m1_risk_deduc_values import (
     val_BC,
     val_D,
     val_I,
@@ -10,9 +13,9 @@ from multidim_screening_plain.insurance_d1_m1_risk_deduc_values import (
 
 
 def test_dvalBC(build_model):
-    model = build_model("insurance_d1_m1_risk_deduc")
+    model = build_model("insurance", "d1_m1_risk_deduc")
     y = np.array([1.6])
-    theta = np.array([-6.0])
+    theta = np.array([6.0])
 
     def BCdBC(z, args, gr):
         if gr:
@@ -28,15 +31,16 @@ def test_dvalBC(build_model):
 
 def test_dvalD():
     y = np.array([0.3])
-    delta = -6.0
-    s = 4.0
+    delta = 6.0
+    s = 2.0
+    k = 0.012
 
     def DdD(z, args, gr):
         if gr:
-            obj_grad = val_D(z, delta, s, gr=True)
+            obj_grad = val_D(z, delta, s, k, gr=True)
             return obj_grad
         else:
-            obj = val_D(z, delta, s)
+            obj = val_D(z, delta, s, k)
             return obj
 
     anal, num = check_gradient_scalar_function(DdD, y, args=[])
@@ -44,9 +48,9 @@ def test_dvalD():
 
 
 def test_dvalI(build_model):
-    model = build_model("insurance_d1_m1_risk_deduc")
+    model = build_model("insurance", "d1_m1_risk_deduc")
     y = np.array([1.3])
-    theta = np.array([-6.0])
+    theta = np.array([6.0])
 
     def IdI(z, args, gr):
         if gr:
@@ -76,9 +80,9 @@ def test_dvalI(build_model):
 
 
 def test_db(build_model):
-    model = build_model("insurance_d1_m1_risk_deduc")
+    model = build_model("insurance", "d1_m1_risk_deduc")
     y = np.array([1.2])
-    theta = np.array([-6.0])
+    theta = np.array([6.0])
 
     def bdb(z, args, gr):
         if gr:
@@ -108,9 +112,9 @@ def test_db(build_model):
 
 
 def test_dS(build_model):
-    model = build_model("insurance_d1_m1_risk_deduc")
+    model = build_model("insurance", "d1_m1_risk_deduc")
     y = np.array([1.3])
-    theta = np.array([-6.0])
+    theta = np.array([6.0])
 
     def SdS(z, args, gr):
         if gr:
