@@ -1,10 +1,10 @@
 repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.3.3"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.17.6"
     hooks:
-      - id: ruff
+      - id: ruff-check
       
   - repo: https://github.com/psf/black
-    rev: "24.3.0"
+    rev: "26.10.1"
     hooks:
       - id: black

@@ -7,9 +7,14 @@ import altair as alt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from bs_python_utils.bs_altair import _maybe_save
 
 from multidim_screening_plain.classes import ScreeningModel
+
+
+def _maybe_save(ch: alt.Chart, save: str | Path | None = None) -> None:
+    """saves the chart as `{save}.html` if `save` is given"""
+    if save is not None:
+        ch.save(f"{save}.html")
 
 
 def drawArrow_2dim(ax, xA, xB, yA, yB, c="k", ls="-"):

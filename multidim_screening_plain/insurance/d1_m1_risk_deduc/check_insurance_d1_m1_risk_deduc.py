@@ -53,7 +53,7 @@ def gross_utility(yv, args):
 
 
 def obj_grad_FB(yv: np.ndarray, args: list, gr: bool = False):
-    p_1v, delta, val_A, grad_A = args
+    p_1v, delta, _val_A, _grad_A = args
     val, grad, *_ = gross_utility(yv, args)
     val, grad = -val, -grad
     dy0s = (delta - yv) / s

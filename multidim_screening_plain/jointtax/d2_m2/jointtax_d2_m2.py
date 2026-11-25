@@ -180,9 +180,8 @@ def proximal_operator(
         elif foc_savings(endowment) >= 0.0:
             savings = endowment
         else:
-            savings = spopt.root_scalar(
-                foc_savings, x0=endowment / 2.0, bracket=[0, endowment]
-            ).root
+            # with a bracket, root_scalar uses brentq (x0 was ignored)
+            savings = spopt.root_scalar(foc_savings, bracket=(0.0, endowment)).root
 
         return np.array([savings, hours])
 

@@ -120,7 +120,7 @@ def D_mul(v: np.ndarray) -> np.ndarray:
         an $N^d$-vector
     """
     N = v.size
-    return np.add.outer(v, -v).reshape(N * N)
+    return cast(np.ndarray, np.add.outer(v, -v).reshape(N * N))
 
 
 def D_star(v_mat: np.ndarray) -> Any:

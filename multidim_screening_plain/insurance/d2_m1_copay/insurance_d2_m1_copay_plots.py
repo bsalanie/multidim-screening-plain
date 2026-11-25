@@ -2,9 +2,8 @@ from typing import cast
 
 import altair as alt
 import pandas as pd
-from bs_python_utils.bs_altair import _maybe_save
 
-from multidim_screening_plain.plot_utils import set_axis, set_colors
+from multidim_screening_plain.plot_utils import _maybe_save, set_axis, set_colors
 
 
 def plot_calibration(

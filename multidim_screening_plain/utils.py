@@ -41,14 +41,7 @@ def make_grid(theta: list[np.ndarray]) -> np.ndarray:
         an $(N,d)$-matrix, the grid of types
     """
     ltheta = np.meshgrid(*theta)
-    d = len(ltheta)
-    for j in range(d):
-        ltheta[j] = ltheta[j].flatten()
-    N = ltheta[0].size
-    theta_mat = np.zeros((N, d))
-    for j in range(d):
-        theta_mat[:, j] = ltheta[j]
-    return theta_mat
+    return np.column_stack([theta_j.ravel() for theta_j in ltheta])
 
 
 def split_y(y: np.ndarray, m: int) -> list[np.ndarray]:
