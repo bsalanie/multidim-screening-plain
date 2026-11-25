@@ -56,6 +56,43 @@ def construct_D(N: int) -> tuple[sparse.csr_matrix, float]:
     return D, gamma_proj
 
 
+def get_contract_bounds(model: ScreeningModel) -> tuple[np.ndarray, np.ndarray]:
+    """the bounds on the contracts: from the model module's `contract_bounds`,
+    if it has one, otherwise from the configuration file
+
+    Args:
+        model: the ScreeningModel
+
+    Returns:
+        two `m`-vectors, the minima and the maxima
+    """
+    bounds_fun = getattr(model.model_module, "contract_bounds", None)
+    bounds = bounds_fun(model) if bounds_fun is not None else model.y_minmax
+    return bounds[:, 0], bounds[:, 1]
+
+
+def extrapolate_contracts(
+    model: ScreeningModel, y: np.ndarray, y_old: np.ndarray, t_acc: float
+) -> np.ndarray:
+    """computes `y_bar = y + t_acc (y - y_old)`, clipped to the bounds on the contracts
+
+    Args:
+        model: the ScreeningModel
+        y: the new contracts, an `m N`-vector
+        y_old: the previous contracts, an `m N`-vector
+        t_acc: the extrapolation factor
+
+    Returns:
+        the `m N`-vector `y_bar`
+    """
+    lo, hi = get_contract_bounds(model)
+    N = model.N
+    return cast(
+        np.ndarray,
+        np.clip(y + t_acc * (y - y_old), np.repeat(lo, N), np.repeat(hi, N)),
+    )
+
+
 def JLambda(model: ScreeningModel, y: np.ndarray) -> np.ndarray:
     """computes `Lambda'_{ij}(y) = b'_i(y_j)-b'_j(y_j)`
 
@@ -156,6 +193,27 @@ def nlLambda(
     return db
 
 
+def nlLambda_and_JLambda(
+    model: ScreeningModel, y: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """computes `Lambda(y)` and its Jacobian with one call to `b_function`
+
+    Args:
+        model: the ScreeningModel
+        y: the contracts, a vector of size `m N`
+
+    Returns:
+        the `(N, N)` matrix `Lambda_{ij}(y) = b_i(y_j)-b_j(y_j)`
+            and the `(m, N, N)` array `b'_i(y_j)-b'_j(y_j)`
+    """
+    b_vals, db_vals = model.b_function(model, y, gr=True)
+    Lambda_vals = b_vals - np.diag(b_vals)[None, :]
+    J = np.empty((model.m, model.N, model.N))
+    for k in range(model.m):
+        J[k, :, :] = db_vals[k, :, :] - np.diag(db_vals[k, :, :])[None, :]
+    return Lambda_vals, J
+
+
 ############ ############ ############ ############ ############ ######
 ############  UNSUCCESSFUL ATTEMPT TO USE MULTIPROCESSING  ############
 ############ ############ ############ ############ ############ ######
@@ -227,6 +285,23 @@ def prox_minusS(
     Nmax = N - 1 if fix_top else N
     working_i0 = [i for i in free_y if i < Nmax] if free_y else list(range(Nmax))
 
+    y = y_current.copy()
+    if fix_top:
+        # we fix the second-best at the first-best at the top
+        for k in range(m):
+            y[k * N + N - 1] = model.FB_y[-1, k]
+
+    # if the model provides a batched proximal operator, we solve for all types at once
+    prox_batch = getattr(model.model_module, "proximal_operator_batch", None)
+    if prox_batch is not None and model.use_batch_prox:
+        if working_i0:
+            idx = np.array(working_i0)
+            Z = np.column_stack([z[k * N + idx] for k in range(m)])
+            Y = prox_batch(model, theta_mat[idx, :], Z, tau * f[idx])
+            for k in range(m):
+                y[k * N + idx] = Y[:, k]
+        return y
+
     list_working = [
         [
             model,
@@ -238,11 +313,6 @@ def prox_minusS(
     ]
     n_working = len(list_working)
 
-    y = y_current.copy()
-    if fix_top:
-        # we fix the second-best at the first-best at the top
-        for k in range(m):
-            y[k * N + N - 1] = model.FB_y[-1, k]
     # start_prox = perf_counter()
     res = prox_work_func(model, list_working)
     # end_prox = perf_counter()
@@ -372,7 +442,7 @@ def solve(
         )
         # print(f"{npmaxabs(y - y_old)=}")
         # dual update
-        y_bar = y + t_acc * (y - y_old)
+        y_bar = extrapolate_contracts(model, y, y_old, t_acc)
         Ly_bar = nlLambda(model, y_bar).reshape(N2)
         proj_res = cast(
             tuple[np.ndarray, np.ndarray, int, int],
@@ -388,8 +458,8 @@ def solve(
         # print(f"{npmaxabs(v - v_old)=}")
         # bs_error_abort("stop")
         # Ly = nlLambda(model, y).reshape(N2)
-        Ly = nlLambda(model, y).reshape(N2)
-        JLy = JLambda(model, y)
+        Lambda_y, JLy = nlLambda_and_JLambda(model, y)
+        Ly = Lambda_y.reshape(N2)
         LTv = make_LTv(v.reshape((N, N)), JLy)
         # record
         norm1 = L2_norm((y_old - y) * t_acc / tau - (LTv_old - LTv))

@@ -77,6 +77,18 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
         return val_S, grad_S
 
 
+def contract_bounds(model: ScreeningModel) -> np.ndarray:
+    """the proximal operator does not impose bounds on the contracts
+
+    Args:
+        model: the ScreeningModel
+
+    Returns:
+        an `(m, 2)` array of minima and maxima
+    """
+    return np.array([[-np.inf, np.inf]] * 1)
+
+
 def create_initial_contracts(
     model: ScreeningModel,
     start_from_first_best: bool,

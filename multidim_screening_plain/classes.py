@@ -71,6 +71,8 @@ class ScreeningModel:
 
     params: np.ndarray | None = None  # the parameters of the model
     params_names: list | None = None
+    # use the module's `proximal_operator_batch`, if it has one
+    use_batch_prox: bool = True
 
     def __post_init__(self):
         self.N, self.d = check_matrix(self.theta_mat)

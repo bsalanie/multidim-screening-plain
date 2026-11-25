@@ -5,6 +5,7 @@ import numpy as np
 from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
+from multidim_screening_plain.batch_prox import prox_box_batch
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.insurance.d1_m1_risk_copay.insurance_d1_m1_risk_copay_plots import (
     plot_calibration,
@@ -17,6 +18,7 @@ from multidim_screening_plain.insurance.d1_m1_risk_copay.insurance_d1_m1_risk_co
     val_I,
     val_I_no_insurance,
 )
+from multidim_screening_plain.insurance.tpac import tpac_S_and_grad
 from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import check_args, contracts_vector
 
@@ -238,6 +240,38 @@ def proximal_operator(
         print(f"{mini.message}")
         bs_error_abort(f"Minimization did not converge: status {mini.status}")
         return None
+
+
+def proximal_operator_batch(
+    model: ScreeningModel,
+    thetas: np.ndarray,
+    Z: np.ndarray,
+    T: np.ndarray,
+) -> np.ndarray:
+    """batched version of `proximal_operator` (with a step `t`), for several types
+
+    Args:
+        model: the ScreeningModel
+        thetas: an `(n, d)` matrix of characteristics of `n` types
+        Z: an `(n, m)` matrix, the points `z` for these types
+        T: an `n`-vector of steps `t`
+
+    Returns:
+        the `(n, m)` matrix of minimizers
+    """
+    sigma, s, loading, k = cast(np.ndarray, model.params)
+    deltas = thetas[:, 0]
+
+    def surplus_and_grad(Y: np.ndarray, rows: np.ndarray):
+        y_1 = Y[:, 0]
+        S, _, dS_1 = tpac_S_and_grad(
+            sigma, deltas[rows], np.zeros_like(y_1), y_1, s, k, loading
+        )
+        return S, dS_1[:, None]
+
+    return prox_box_batch(
+        surplus_and_grad, Z, T, model.y_minmax[:, 0], model.y_minmax[:, 1]
+    )
 
 
 def adjust_excluded(results: ScreeningResults) -> None:

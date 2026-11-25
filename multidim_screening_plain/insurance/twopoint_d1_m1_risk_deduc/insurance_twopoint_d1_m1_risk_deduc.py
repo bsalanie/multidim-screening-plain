@@ -5,6 +5,7 @@ import numpy as np
 from bs_python_utils.bs_opt import minimize_free
 from bs_python_utils.bsutils import bs_error_abort
 
+from multidim_screening_plain.batch_prox import prox_box_batch
 from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.insurance.twopoint_d1_m1_risk_deduc.insurance_twopoint_d1_m1_risk_deduc_plots import (
     plot_calibration,
@@ -121,6 +122,21 @@ def S_fun(model: ScreeningModel, y: np.ndarray, theta: np.ndarray, gr: bool = Fa
         return val_S, grad_S
 
 
+def contract_bounds(model: ScreeningModel) -> np.ndarray:
+    """the bounds on the deductible: a deductible above the loss is no insurance,
+    and the formulas for `b` and `D` only hold for deductibles below the loss
+
+    Args:
+        model: the ScreeningModel
+
+    Returns:
+        a `(1, 2)` array, the minimum and maximum deductible
+    """
+    loss = cast(np.ndarray, model.params)[-1]
+    y_min, y_max = model.y_minmax[0, :]
+    return np.array([[y_min, min(y_max, loss)]])
+
+
 def create_initial_contracts(
     model: ScreeningModel,
     start_from_first_best: bool,
@@ -138,7 +154,7 @@ def create_initial_contracts(
             the contracts are to be determined.
     """
     N = model.N
-    MIN_Y0, MAX_Y0 = model.y_minmax[0, :]
+    MIN_Y0, MAX_Y0 = contract_bounds(model)[0, :]
     if start_from_first_best:
         if y_first_best_mat is None:
             bs_error_abort("We start from the first best but y_first_best_mat is None")
@@ -216,7 +232,7 @@ def proximal_operator(
         return cast(tuple[float, np.ndarray], prox_obj_and_grad(y, args, gr=True))[1]
 
     y_init = np.array([1.7]) if t is None else z
-    y_min, y_max = model.y_minmax[0, :]
+    y_min, y_max = contract_bounds(model)[0, :]
 
     # check_gradient_scalar_function(prox_obj_and_grad, y_init, args=[])
     # bs_error_abort("done")
@@ -238,6 +254,41 @@ def proximal_operator(
         return None
 
 
+def proximal_operator_batch(
+    model: ScreeningModel,
+    thetas: np.ndarray,
+    Z: np.ndarray,
+    T: np.ndarray,
+) -> np.ndarray:
+    """batched version of `proximal_operator` (with a step `t`), for several types
+
+    Args:
+        model: the ScreeningModel
+        thetas: an `(n, d)` matrix of characteristics of `n` types
+        Z: an `(n, m)` matrix, the points `z` for these types
+        T: an `n`-vector of steps `t`
+
+    Returns:
+        the `(n, m)` matrix of minimizers
+    """
+    sigma, loading, loss = cast(np.ndarray, model.params)
+    probs = thetas[:, 0]
+    factor = 1.0 + loading
+
+    def surplus_and_grad(Y: np.ndarray, rows: np.ndarray):
+        y_0, p = Y[:, 0], probs[rows]
+        exp_y = np.exp(sigma * y_0)
+        val_I = 1.0 - p + p * exp_y
+        val_I_no_insurance = 1.0 - p + p * np.exp(sigma * loss)
+        b = (np.log(val_I_no_insurance) - np.log(val_I)) / sigma
+        S = b - factor * p * (loss - y_0)
+        dS = -p * exp_y / val_I + factor * p
+        return S, dS[:, None]
+
+    bounds = contract_bounds(model)
+    return prox_box_batch(surplus_and_grad, Z, T, bounds[:, 0], bounds[:, 1])
+
+
 def adjust_excluded(results: ScreeningResults) -> None:
     """Adjusts the results for the excluded types, or just `pass`
 
@@ -246,7 +297,7 @@ def adjust_excluded(results: ScreeningResults) -> None:
     """
     deduc = results.SB_y[:, 0]
     EPS = 0.001
-    MAX_DEDUC = results.model.y_minmax[0, 1]
+    MAX_DEDUC = contract_bounds(results.model)[0, 1]
     excluded_types = np.where(deduc > MAX_DEDUC - EPS, True, False).tolist()
     results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
     n_excluded = np.sum(excluded_types)
