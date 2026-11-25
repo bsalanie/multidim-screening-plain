@@ -86,3 +86,14 @@ def test_dbscdf():
 
     anal, num = check_gradient_scalar_function(cdfpdf, y, args=[])
     assert np.allclose(anal, num, rtol=1e-5, atol=1e-5)
+
+
+def test_warn_if_excluded_have_rents(capsys):
+    from multidim_screening_plain.utils import warn_if_excluded_have_rents
+
+    rents = np.array([0.0, 0.5, 0.0, 0.2])
+    warn_if_excluded_have_rents(rents, [True, False, True, False])
+    assert "WARNING" not in capsys.readouterr().out
+    warn_if_excluded_have_rents(rents, [False, True, True, False])
+    out = capsys.readouterr().out
+    assert "WARNING: 1 of the 2 excluded types" in out

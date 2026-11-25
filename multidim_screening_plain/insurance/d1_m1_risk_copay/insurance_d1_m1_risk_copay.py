@@ -20,7 +20,11 @@ from multidim_screening_plain.insurance.d1_m1_risk_copay.insurance_d1_m1_risk_co
 )
 from multidim_screening_plain.insurance.tpac import tpac_S_and_grad
 from multidim_screening_plain.plot_utils import setup_for_plots
-from multidim_screening_plain.utils import check_args, contracts_vector
+from multidim_screening_plain.utils import (
+    check_args,
+    contracts_vector,
+    warn_if_excluded_have_rents,
+)
 
 
 def b_fun(
@@ -284,7 +288,10 @@ def adjust_excluded(results: ScreeningResults) -> None:
     EPS = 0.001
     MAX_COPAY = results.model.y_minmax[0, 1]
     excluded_types = np.where(deduc > MAX_COPAY - EPS, True, False).tolist()
-    results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
+    results.SB_surplus[excluded_types] = 0.0
+    # we do not set their rents to zero: if they are positive, the contracts
+    #   are not incentive-compatible for these types yet
+    warn_if_excluded_have_rents(results.info_rents, excluded_types)
     n_excluded = np.sum(excluded_types)
     results.SB_y[excluded_types, 0] = np.full(n_excluded, MAX_COPAY)
     results.excluded_types = excluded_types

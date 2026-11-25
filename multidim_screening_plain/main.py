@@ -74,7 +74,7 @@ def main(model_type, model_instance):
             warmstart=True,
             scale=True,
             it_max=it_max,
-            stepratio=1.0,
+            stepratio=float(cast(str, config.get("STEP_RATIO", "1.0"))),
             tol_primal=tol,
             tol_dual=tol,
             fix_top=config["FIX_TOP"] == "True",

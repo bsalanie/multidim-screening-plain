@@ -257,3 +257,26 @@ def contracts_matrix(y_vec: np.ndarray, N: int) -> np.ndarray:
 def L2_norm(x: np.ndarray) -> float:
     """Computes the L2 norm of a vector for numba"""
     return sqrt(np.sum(x * x))
+
+
+def warn_if_excluded_have_rents(
+    info_rents: np.ndarray, excluded_types: list | np.ndarray, tol: float = 1e-4
+) -> None:
+    """prints a warning if types deemed excluded have positive informational rents:
+    then they would rather choose the contract of another type, so the contracts
+    are not yet incentive-compatible (the solver has not converged)
+
+    Args:
+        info_rents: an `N`-vector of informational rents
+        excluded_types: a boolean mask of the excluded types
+        tol: the threshold for a positive rent
+    """
+    excluded = np.asarray(excluded_types, dtype=bool)
+    with_rent = excluded & (info_rents > tol)
+    if np.any(with_rent):
+        print(
+            f"\nWARNING: {np.sum(with_rent)} of the {np.sum(excluded)} excluded types have"
+            f" positive rents (max {np.max(info_rents[with_rent]):.4f}, total"
+            f" {np.sum(info_rents[with_rent]):.4f}); the contracts are not yet"
+            " incentive-compatible for them.\n"
+        )

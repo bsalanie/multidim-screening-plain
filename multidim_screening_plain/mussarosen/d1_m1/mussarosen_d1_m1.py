@@ -8,6 +8,7 @@ from multidim_screening_plain.classes import ScreeningModel, ScreeningResults
 from multidim_screening_plain.utils import (
     check_args,
     contracts_vector,
+    warn_if_excluded_have_rents,
 )
 
 
@@ -158,7 +159,10 @@ def adjust_excluded(results: ScreeningResults) -> None:
     FBs, SBs = results.FB_surplus, results.SB_surplus
     EPS = 0.001
     excluded_types = np.where(SBs / FBs < EPS, True, False).tolist()
-    results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
+    results.SB_surplus[excluded_types] = 0.0
+    # we do not set their rents to zero: if they are positive, the contracts
+    #   are not incentive-compatible for these types yet
+    warn_if_excluded_have_rents(results.info_rents, excluded_types)
     n_excluded = np.sum(excluded_types)
     results.SB_y[excluded_types] = np.zeros((n_excluded, 1))
     results.excluded_types = excluded_types

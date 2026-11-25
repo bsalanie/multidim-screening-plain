@@ -23,6 +23,7 @@ from multidim_screening_plain.plot_utils import setup_for_plots
 from multidim_screening_plain.utils import (
     check_args,
     contracts_vector,
+    warn_if_excluded_have_rents,
 )
 
 
@@ -275,7 +276,10 @@ def adjust_excluded(results: ScreeningResults) -> None:
     copay = results.SB_y[:, 1]
     EPS = 0.001
     excluded_types = np.where(copay > 1.0 - EPS, True, False).tolist()
-    results.SB_surplus[excluded_types] = results.info_rents[excluded_types] = 0.0
+    results.SB_surplus[excluded_types] = 0.0
+    # we do not set their rents to zero: if they are positive, the contracts
+    #   are not incentive-compatible for these types yet
+    warn_if_excluded_have_rents(results.info_rents, excluded_types)
     MAX_DEDUC = results.model.y_minmax[0, 1]
     n_excluded = np.sum(excluded_types)
     results.SB_y[excluded_types, 0] = np.full(n_excluded, MAX_DEDUC)
