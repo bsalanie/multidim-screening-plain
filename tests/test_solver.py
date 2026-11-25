@@ -45,7 +45,7 @@ def test_proj_K(build_model):
     _, gamma_proj = construct_D(N)
     rng = np.random.default_rng(7)
     w = rng.normal(size=N * N)
-    v, lamb, it, converged = proj_K(model, w, np.zeros(N), gamma_proj)
+    v, _lamb, it, converged = proj_K(model, w, np.zeros(N), gamma_proj)
     assert converged
     assert it > 0
     v_mat = v.reshape((N, N))
