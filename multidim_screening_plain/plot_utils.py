@@ -97,7 +97,8 @@ def display_variable_d2(
     fig, ax = plt.subplots(1, 1, figsize=figsize, subplot_kw=kwargs)
     _ = ax.set_xlabel(theta_names[0])
     _ = ax.set_ylabel(theta_names[1])
-    _ = ax.set_title(title)
+    if title is not None:
+        _ = ax.set_title(title)
     scatter = ax.scatter(
         theta_mat[:, 0],
         theta_mat[:, 1],
@@ -203,7 +204,8 @@ def plot_y_range_m2(
     )
     _ = ax.set_xlabel(y_0_name)
     _ = ax.set_ylabel(y_1_name)
-    _ = ax.set_title(title)
+    if title is not None:
+        _ = ax.set_title(title)
     if path is not None:
         fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
 

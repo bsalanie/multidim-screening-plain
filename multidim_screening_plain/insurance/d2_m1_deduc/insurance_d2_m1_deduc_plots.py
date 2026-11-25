@@ -160,7 +160,8 @@ def plot_second_best_contracts(
     fig, ax = plt.subplots(1, 1, figsize=figsize, subplot_kw=kwargs)
     _ = ax.set_xlabel(r"Risk-aversion $\sigma$")
     _ = ax.set_ylabel(r"Risk location $\delta$")
-    _ = ax.set_title(title)
+    if title is not None:
+        _ = ax.set_title(title)
     theta_mat = df_second[["Risk-aversion", "Risk location"]].values
     y_mat = df_second[["Deductible"]].values
     scatter = ax.scatter(
