@@ -63,3 +63,8 @@ s = 2.0, loading = 0.25, k = 0.012
 convergence = False, iterations = 50000, elapsed time = 0:24:17.347454
 primal residual = 6.80e+02 tol,  dual residual = 1.55e+02 tol
 
+N = 100, tau = 9.75e-04, sig = 9.75e-03, step ratio = 10.0, primal tol = 1.41e-04, dual tol = 1.00e-03
+s = 2.0, loading = 0.25, k = 0.012
+convergence = False, iterations = 50000, elapsed time = 0:04:42.252346
+primal residual = 5.34e+02 tol,  dual residual = 1.79e+01 tol
+
