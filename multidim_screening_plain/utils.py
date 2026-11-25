@@ -162,11 +162,11 @@ def bs_norm_cdf(x: np.ndarray | float) -> np.ndarray | float:
 
     z = x * INV_SQRT_2
     if is_array:
-        sign_z = np.sign(z)
+        sign_z: np.ndarray | float = np.where(z > 0, 1.0, -1.0)
         abs_z = np.abs(z)
         ez2 = np.exp(-z * z)
     else:
-        sign_z = 1 if z > 0 else -1
+        sign_z = 1.0 if z > 0 else -1.0
         abs_z = abs(z)
         ez2 = exp(-z * z)
     t = 1.0 / (1.0 + p * abs_z)
@@ -192,11 +192,11 @@ def bs_norm_pdf(x: np.ndarray | float) -> np.ndarray | float:
 
     z = x * INV_SQRT_2
     if is_array:
-        sign_z = np.sign(z)
+        sign_z: np.ndarray | float = np.where(z > 0, 1.0, -1.0)
         abs_z = np.abs(z)
         ez2 = np.exp(-z * z)
     else:
-        sign_z = 1 if z > 0 else -1
+        sign_z = 1.0 if z > 0 else -1.0
         abs_z = abs(z)
         ez2 = exp(-z * z)
 

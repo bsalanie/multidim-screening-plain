@@ -26,7 +26,7 @@ def val_A(deltas: np.ndarray | float, s: float, k: float) -> np.ndarray | float:
     Returns:
         the values of `A(delta,s)` as a `q`-vector, or a single value
     """
-    return 1.0 - k * deltas * bs_norm_cdf(-deltas / s)
+    return 1.0 - k * deltas * bs_norm_cdf(deltas / s)
 
 
 def val_BC(
@@ -192,5 +192,5 @@ def expected_positive_loss(deltas, s):
 
 def cost_non_insur(model):
     sigmas = model.theta_mat[:, 0]
-    y_no_insur = np.array([10.0])
+    y_no_insur = np.array([20.0])  # same as in b_fun: P(L > 20) < 1e-9
     return np.log(val_I(model, y_no_insur))[:, 0] / sigmas

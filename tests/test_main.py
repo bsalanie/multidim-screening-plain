@@ -65,7 +65,12 @@ def test_norm_pdf():
     x = np.linspace(-8.0, 8.0, 100).reshape((20, 5))
     assert np.allclose(bs_norm_pdf(x), norm.pdf(x), rtol=1e-6, atol=1e-6)
     x = 1.9
-    assert isclose(bs_norm_cdf(x), norm.cdf(x), rel_tol=1e-6, abs_tol=1e-6)
+    assert isclose(bs_norm_pdf(x), norm.pdf(x), rel_tol=1e-5, abs_tol=1e-5)
+    # at exactly 0, for arrays and for scalars
+    zero = np.array([-1.0, 0.0, 1.0])
+    assert np.allclose(bs_norm_pdf(zero), norm.pdf(zero), rtol=1e-5, atol=1e-5)
+    assert np.allclose(bs_norm_cdf(zero), norm.cdf(zero), rtol=1e-6, atol=1e-6)
+    assert isclose(bs_norm_pdf(0.0), norm.pdf(0.0), rel_tol=1e-5, abs_tol=1e-5)
 
 
 def test_dbscdf():

@@ -302,6 +302,7 @@ def proj_K(
             bool, np.all(constraints < c_tol) and abs(lamb_constraints) < o_tol
         )
         lamb_extra = lamb1 + (it - 1.0) / (it + 3.0) * (lamb1 - lamb_old)
+        it += 1
 
     if converged:
         return v, lamb1, it, converged
@@ -532,16 +533,20 @@ def compute_utilities(
     y_second = contracts_vector(y_second_best)
     Lambda_vals = nlLambda(model, y_second).reshape((N, N))
 
-    U_second = U_old = np.zeros(N)
+    # iterate U_i <- max_j (Lambda_ij + U_j) from U = 0 (Gauss-Seidel sweeps);
+    #  since Lambda_ii = 0, this also enforces U >= 0
+    U_second = np.zeros(N)
     dU = np.inf
     it_max = N
     it = 0
     while dU > tol_fp and it < it_max:
+        U_old = U_second.copy()
         for i in range(N):
-            U_second[i] = np.max(Lambda_vals[i, :] + U_old)
+            U_second[i] = np.max(Lambda_vals[i, :] + U_second)
         dU = npmaxabs(U_second - U_old)
-        U_old = U_second
         it += 1
+    if dU > tol_fp:
+        print(f"compute_utilities: the fixed point did not converge, {dU=}")
 
     tol = 1e-4
     results.IR_binds = np.argwhere(U_second < tol).flatten()
