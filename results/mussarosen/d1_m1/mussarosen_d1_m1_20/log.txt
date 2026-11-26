@@ -50,3 +50,7 @@ N = 20, tau = 1.65e-01, sig = 1.65e-01, step ratio = 1.0, primal tol = 4.47e-05,
 convergence = True, iterations = 152, elapsed time = 0:00:00.134712
 primal residual = 2.96e-01 tol,  dual residual = 9.97e-01 tol
 
+N = 20, tau = 1.65e-01, sig = 1.65e-01, step ratio = 1.0, primal tol = 4.47e-05, dual tol = 2.00e-04
+convergence = True, iterations = 221, elapsed time = 0:00:00.084664
+primal residual = 3.50e-01 tol,  dual residual = 9.92e-01 tol
+

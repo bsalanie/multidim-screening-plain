@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import cast
 
@@ -107,8 +108,16 @@ def general_plots(model: ScreeningModel) -> tuple[pd.DataFrame, str]:
             path=model_plotdir + "/y_range",
         )
 
-    IR_binds = np.loadtxt(model_resdir + "/IR_binds.txt").astype(int).tolist()
-    IC_binds = np.loadtxt(model_resdir + "/IC_binds.txt").astype(int).tolist()
+    # an empty file (no binding constraint) is legitimate; ndmin keeps the shapes
+    #   right when there are zero or one binding constraints
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="loadtxt: input contained no data")
+        IR_binds = (
+            np.loadtxt(model_resdir + "/IR_binds.txt", ndmin=1).astype(int).tolist()
+        )
+        IC_binds = (
+            np.loadtxt(model_resdir + "/IC_binds.txt", ndmin=2).astype(int).tolist()
+        )
 
     if d == 2:
         plot_constraints_d2(

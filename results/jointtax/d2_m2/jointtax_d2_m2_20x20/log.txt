@@ -38,3 +38,8 @@ w = 1.0, R = 1.0, eta = 1.0
 convergence = False, iterations = 500000, elapsed time = 1:14:41.046318
 primal residual = 3.76e+01 tol,  dual residual = 1.44e+01 tol
 
+N = 400, tau = 2.24e-03, sig = 2.24e-03, step ratio = 1.0, primal tol = 2.83e-04, dual tol = 4.00e-03
+w = 1.0, R = 1.0, eta = 1.0
+convergence = False, iterations = 500000, elapsed time = 1:04:46.689074
+primal residual = 2.04e+01 tol,  dual residual = 9.40e+00 tol
+
